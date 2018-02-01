@@ -37,12 +37,6 @@ func (mw Middleware) Then(final http.Handler) http.Handler {
 	}(final))
 }
 
-// errUnsupportedArgType is invoked if one of provided arguments is not from the
-// list of supported types.
-func errUnsupportedArgType(v interface{}) error {
-	return fmt.Errorf("unsupported argument type \"%T\"", v)
-}
-
 // blobHandler will be called anyway (if request reached your final handler),
 // it is just a blob used to prevent calling ServeHTTP() method from panic since
 // final handler is being wrapped with anonymous Middleware func. It has been
@@ -61,7 +55,7 @@ var blobHandler = func(w http.ResponseWriter, r *http.Request) {}
 // to put something to the context (and do not have any logic after calling "next")
 // there is no sense to build Middleware func around
 // - even if you do not pass any handlers blobHandler will be executed.
-func Chain(handlers ...interface{}) (http.Handler, error) {
+func Chain(handlers ...interface{}) http.Handler {
 	// fake handler in order to wrap last handler call "next"
 	var f http.Handler = http.HandlerFunc(blobHandler)
 	// apply middleware/handlers from the last to the first one
@@ -94,8 +88,8 @@ func Chain(handlers ...interface{}) (http.Handler, error) {
 			}(t, f)
 		default:
 			// everything else is not supported
-			return nil, errUnsupportedArgType(t)
+			panic(fmt.Sprintf("unsupported argument type \"%T\"", t))
 		}
 	}
-	return f, nil
+	return f
 }

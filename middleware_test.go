@@ -3,7 +3,6 @@ package mw
 import (
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 )
 
@@ -81,13 +80,13 @@ func Test_Middleware(t *testing.T) {
 			w := httptest.NewRecorder()
 			tc.handler.ServeHTTP(w, nil)
 			if w.Body.String() != tc.out {
-				t.Fatalf("The output %q is expected to be %q", w.Body.String(), tc.out)
+				t.Errorf("The output %q is expected to be %q", w.Body.String(), tc.out)
 			}
 		})
 	}
 }
 
-func Test_ChainAny(t *testing.T) {
+func Test_Chain(t *testing.T) {
 	// replace blob handler in order to check if it is being called
 	blobHandler = func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("/blob handler"))
@@ -97,20 +96,20 @@ func Test_ChainAny(t *testing.T) {
 		title string
 		args  []interface{}
 		out   string
-		err   error
+		panic bool
 	}
 
 	cases := []testCase{
 		testCase{
-			title: "building handler with unsupported argument types should produce an error",
+			title: "building handler with unsupported argument types should panic",
 			args: []interface{}{
 				middlewareOne,
 				middlewareTwo,
-				42,
+				true,
 				middlewareThree,
 				handlerFinal,
 			},
-			err: errUnsupportedArgType(42),
+			panic: true,
 		},
 		testCase{
 			title: "middleware should have control over the \"next\" handlers",
@@ -143,17 +142,21 @@ func Test_ChainAny(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.title, func(t *testing.T) {
-			h, err := Chain(tc.args...)
-			if !reflect.DeepEqual(err, tc.err) {
-				t.Fatalf("Error \"%v\" expected to be %v", err, tc.err)
-			}
-			// no sense to call handler if ChainAny returned an error
-			if h != nil {
-				w := httptest.NewRecorder()
-				h.ServeHTTP(w, nil)
-				if w.Body.String() != tc.out {
-					t.Fatalf("Out %v expected to be %v", w.Body.String(), tc.out)
+			defer func() {
+				if r := recover(); r == nil {
+					if tc.panic {
+						t.Errorf("The code did not panic")
+					}
+				} else {
+					if !tc.panic {
+						t.Errorf("The code should not panic")
+					}
 				}
+			}()
+			w := httptest.NewRecorder()
+			Chain(tc.args...).ServeHTTP(w, nil)
+			if w.Body.String() != tc.out {
+				t.Errorf("Out %v expected to be %v", w.Body.String(), tc.out)
 			}
 		})
 	}
