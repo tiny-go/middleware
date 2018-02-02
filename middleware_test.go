@@ -80,7 +80,7 @@ func Test_Middleware(t *testing.T) {
 			w := httptest.NewRecorder()
 			tc.handler.ServeHTTP(w, nil)
 			if w.Body.String() != tc.out {
-				t.Errorf("The output %q is expected to be %q", w.Body.String(), tc.out)
+				t.Errorf("the output %q is expected to be %q", w.Body.String(), tc.out)
 			}
 		})
 	}
@@ -145,18 +145,18 @@ func Test_Chain(t *testing.T) {
 			defer func() {
 				if r := recover(); r == nil {
 					if tc.panic {
-						t.Errorf("The code did not panic")
+						t.Errorf("the code did not panic")
 					}
 				} else {
 					if !tc.panic {
-						t.Errorf("The code should not panic")
+						t.Errorf("the code should not panic")
 					}
 				}
 			}()
 			w := httptest.NewRecorder()
 			Chain(tc.args...).ServeHTTP(w, nil)
 			if w.Body.String() != tc.out {
-				t.Errorf("Out %v expected to be %v", w.Body.String(), tc.out)
+				t.Errorf("out %v expected to be %v", w.Body.String(), tc.out)
 			}
 		})
 	}
