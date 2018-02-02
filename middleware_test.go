@@ -64,6 +64,11 @@ func Test_Middleware(t *testing.T) {
 			out:     "/mw1 before next/final handler/mw1 after next",
 		},
 		testCase{
+			title:   "build handler passing middleware to the constructor (call New() with arguments)",
+			handler: New(middlewareOne, middlewareTwo).Use(middlewareThree).Then(handlerFinal),
+			out:     "/mw1 before next/mw2 before next/mw3 before next/final handler/mw3 after next/mw2 after next/mw1 after next",
+		},
+		testCase{
 			title:   "build handler with multiple middleware (adding one middleware per Use())",
 			handler: New().Use(middlewareOne).Use(middlewareTwo).Use(middlewareThree).Then(handlerFinal),
 			out:     "/mw1 before next/mw2 before next/mw3 before next/final handler/mw3 after next/mw2 after next/mw1 after next",

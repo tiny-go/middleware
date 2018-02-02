@@ -9,12 +9,16 @@ import (
 // it and returns a new http.Handler for the server to call.
 type Middleware func(http.Handler) http.Handler
 
-// New is just an empty Midleware needed in order to start the chain:
-// mw.New().Use(mwOne).Use(mwTwo, mwThree).Then(handler)
-func New() Middleware {
-	return func(handler http.Handler) http.Handler {
+// New is a Middleware constructor func. The call without arguments returns an
+// empty Middleware.
+// Usage (all examples below are equal):
+// - mw.New().Use(mwOne, mwTwo, mwThree).Then(handler)
+// - mw.New(mwOne).Use(mwTwo, mwThree).Then(handler)
+// - mw.New(mwOne, mwTwo, mwThree).Then(handler)
+func New(middlewares ...Middleware) Middleware {
+	return Middleware(func(handler http.Handler) http.Handler {
 		return handler
-	}
+	}).Use(middlewares...)
 }
 
 // Use transforms provided middleware function(s) (including current one) into
