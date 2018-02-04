@@ -58,22 +58,22 @@ func Test_Middleware(t *testing.T) {
 	}
 
 	cases := []testCase{
-		testCase{
+		{
 			title:   "build handler with single middleware (one call of Use() func with single argument)",
 			handler: New().Use(middlewareOne).Then(handlerFinal),
 			out:     "/mw1 before next/final handler/mw1 after next",
 		},
-		testCase{
+		{
 			title:   "build handler passing middleware to the constructor (call New() with arguments)",
 			handler: New(middlewareOne, middlewareTwo).Use(middlewareThree).Then(handlerFinal),
 			out:     "/mw1 before next/mw2 before next/mw3 before next/final handler/mw3 after next/mw2 after next/mw1 after next",
 		},
-		testCase{
+		{
 			title:   "build handler with multiple middleware (adding one middleware per Use())",
 			handler: New().Use(middlewareOne).Use(middlewareTwo).Use(middlewareThree).Then(handlerFinal),
 			out:     "/mw1 before next/mw2 before next/mw3 before next/final handler/mw3 after next/mw2 after next/mw1 after next",
 		},
-		testCase{
+		{
 			title:   "build handler with combination of single/plural calls of Use()",
 			handler: New().Use(middlewareOne).Use(middlewareTwo, middlewareThree).Then(handlerFinal),
 			out:     "/mw1 before next/mw2 before next/mw3 before next/final handler/mw3 after next/mw2 after next/mw1 after next",
@@ -105,7 +105,7 @@ func Test_Chain(t *testing.T) {
 	}
 
 	cases := []testCase{
-		testCase{
+		{
 			title: "building handler with unsupported argument types should panic",
 			args: []interface{}{
 				middlewareOne,
@@ -116,7 +116,7 @@ func Test_Chain(t *testing.T) {
 			},
 			panic: true,
 		},
-		testCase{
+		{
 			title: "middleware should have control over the \"next\" handlers",
 			args: []interface{}{
 				middlewareOne,
@@ -127,11 +127,11 @@ func Test_Chain(t *testing.T) {
 			},
 			out: "/mw1 before next/mw2 before next/skip the rest/mw2 after next/mw1 after next",
 		},
-		testCase{
+		{
 			title: "calling function without any arguments should build a middleware with only blobHandler",
 			out:   "/blob handler",
 		},
-		testCase{
+		{
 			title: "building handler with all kind of supported arguments should be successful",
 			args: []interface{}{
 				middlewareOne,
