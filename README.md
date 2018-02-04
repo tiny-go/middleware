@@ -1,6 +1,8 @@
 # go-middleware
 
-[![CircleCI][circleci-badge]][circleci-link]
+[![Build Status][circleci-badge]][circleci-link]
+[![Report Card][report-badge]][report-link]
+
 
 Golang HTTP middleware
 
