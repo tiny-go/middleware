@@ -11,10 +11,11 @@ type Middleware func(http.Handler) http.Handler
 
 // New is a Middleware constructor func. The call without arguments returns an
 // empty Middleware.
+//
 // Usage (all examples below are equal):
-// - mw.New().Use(mwOne, mwTwo, mwThree).Then(handler)
-// - mw.New(mwOne).Use(mwTwo, mwThree).Then(handler)
-// - mw.New(mwOne, mwTwo, mwThree).Then(handler)
+//	- mw.New().Use(mwOne, mwTwo, mwThree).Then(handler)
+// 	- mw.New(mwOne).Use(mwTwo, mwThree).Then(handler)
+// 	- mw.New(mwOne, mwTwo, mwThree).Then(handler)
 func New(middlewares ...Middleware) Middleware {
 	return Middleware(func(handler http.Handler) http.Handler {
 		return handler
@@ -49,16 +50,17 @@ var blobHandler = func(w http.ResponseWriter, r *http.Request) {}
 
 // Chain builds a http.Handler from passed arguments. It accepts different
 // kinds of argument types:
-// - Middleware - can break the chain inside
-// - func(http.Handler) http.Handler - same with Middleware
-// - http.Handler - next will be called in any case
-// - func(w http.ResponseWriter, r *http.Request) - sme with http.Handler
+// 	- Middleware - can break the chain inside
+// 	- func(http.Handler) http.Handler - same with Middleware
+// 	- http.Handler - next will be called in any case
+// 	- func(w http.ResponseWriter, r *http.Request) - sme with http.Handler
+//
 // Keep in mind:
-// - by passing http.Handler/http.HandlerFunc instead of Middleware you lose
+// 	- by passing http.Handler/http.HandlerFunc instead of Middleware you lose
 // control over the next Middleware (no way to cancel it), but if you only need
 // to put something to the context (and do not have any logic after calling "next")
 // there is no sense to build Middleware func around
-// - even if you do not pass any handlers blobHandler will be executed.
+// 	- even if you do not pass any handlers blobHandler will be executed.
 func Chain(handlers ...interface{}) http.Handler {
 	// fake handler in order to wrap last handler call "next"
 	var f http.Handler = http.HandlerFunc(blobHandler)
