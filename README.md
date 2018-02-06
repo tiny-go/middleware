@@ -26,11 +26,16 @@ func main() {
 		panic("something went wrong")
 	}
 
-	handler := mw.
-		New(mw.PanicRecover(log.New(os.Stdout, "", 0))).
-		Use(mw.BodyClose).
-		Then(final)
-	http.Handle("/", handler)
+	http.Handle(
+		"/",
+		mw.
+      // use New() to start the chain
+			New(mw.PanicRecover(log.New(os.Stdout, "", 0))).
+      // Use() - to add middleware
+			Use(mw.BodyClose).
+      // Then() - to set the final handler
+			Then(final),
+	)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
