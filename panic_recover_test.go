@@ -13,7 +13,7 @@ func (l *mockLogger) Println(v ...interface{}) {
 }
 
 func Test_PanicRecover(t *testing.T) {
-	t.Run("panic recover middleware should be able to catch a panic in the next handlers and report to the log", func(t *testing.T) {
+	t.Run("panic recover middleware should be able to catch panics in the next handlers and report to the log", func(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				t.Error("the code should not panic because it is wrapped with PanicRecover middleware")
