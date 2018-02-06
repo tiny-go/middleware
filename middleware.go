@@ -51,13 +51,13 @@ var blobHandler = func(w http.ResponseWriter, r *http.Request) {}
 // Chain builds a http.Handler from passed arguments. It accepts different
 // kinds of argument types:
 //
-// - `Middleware` - can break the chain inside
+// - Middleware - can break the chain inside
 //
-// - `func(http.Handler) http.Handler` - same with `Middleware`
+// - func(http.Handler) http.Handler - same with Middleware
 //
-// - `http.Handler` - next will be called in any case
+// - http.Handler - next will be called in any case
 //
-// - `func(w http.ResponseWriter, r *http.Request)`` - same with `http.Handler`
+// - func(w http.ResponseWriter, r *http.Request) - same with http.Handler
 //
 // Keep in mind:
 //

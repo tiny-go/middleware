@@ -1,5 +1,6 @@
 # go-middleware
 
+[![GoDoc][godoc-badge]][godoc-link]
 [![Build Status][circleci-badge]][circleci-link]
 [![Report Card][report-badge]][report-link]
 [![GoCover][cover-badge]][cover-link]
@@ -40,6 +41,8 @@ func main() {
 
 ```
 
+[godoc-badge]: https://godoc.org/github.com/Alma-media/go-middleware?status.svg
+[godoc-link]: https://godoc.org/github.com/Alma-media/go-middleware
 [circleci-badge]: https://circleci.com/gh/Alma-media/go-middleware.svg?style=shield
 [circleci-link]: https://circleci.com/gh/Alma-media/go-middleware
 [report-badge]: https://goreportcard.com/badge/github.com/Alma-media/go-middleware
