@@ -8,7 +8,10 @@ Golang HTTP middleware
 
 ### Examples
 
-- using middleware chaining functions:
+Build the handler using middleware chaining functions:
+- `New()` - start the chain. Can accept 0 (zero) or more arguments.
+- `Use()` - add middleware to existing chain.
+- `Then()` - set the final handler (which is `http.Handler`).
 
 ```go
 package main
@@ -25,18 +28,13 @@ func main() {
 	var final http.HandlerFunc = func(w http.ResponseWriter, r *http.Request) {
 		panic("something went wrong")
 	}
-
 	http.Handle(
 		"/",
 		mw.
-      // use New() to start the chain
 			New(mw.PanicRecover(log.New(os.Stdout, "", 0))).
-      // Use() - to add middleware
 			Use(mw.BodyClose).
-      // Then() - to set the final handler
 			Then(final),
 	)
-
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
