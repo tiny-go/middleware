@@ -2,7 +2,7 @@
 
 [![Build Status][circleci-badge]][circleci-link]
 [![Report Card][report-badge]][report-link]
-[[!GoCover][cover-badge]][cover-link]
+[![GoCover][cover-badge]][cover-link]
 
 Golang HTTP middleware
 
