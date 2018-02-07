@@ -7,6 +7,12 @@
 
 Golang HTTP middleware
 
+### Installation
+Since `go-middleware` is an open source project and repository is public you can simply install it with `go get`:
+```bash
+$ go get github.com/Alma-media/go-middleware
+```
+
 ### Examples
 
 1. Build the handler using middleware chaining functions:
