@@ -21,9 +21,9 @@ func ContextDeadline(timeout time.Duration) Middleware {
 			if timeout > 0 {
 				// the request has a timeout, so create a context that is canceled automatically
 				// when the timeout expires
-				ctx, cancel = context.WithTimeout(context.Background(), timeout)
+				ctx, cancel = context.WithTimeout(r.Context(), timeout)
 			} else {
-				ctx, cancel = context.WithCancel(context.Background())
+				ctx, cancel = context.WithCancel(r.Context())
 			}
 			defer cancel()
 			// replace request context
