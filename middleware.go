@@ -74,8 +74,8 @@ func Chain(handlers ...interface{}) http.Handler {
 	// fake handler in order to wrap last handler call "next"
 	var f http.Handler = http.HandlerFunc(blobHandler)
 	// apply middleware/handlers from the last to the first one
-	for i := range handlers {
-		switch t := handlers[len(handlers)-1-i].(type) {
+	for i := len(handlers) - 1; i >= 0; i-- {
+		switch t := handlers[i].(type) {
 		// build the handler from classic middleware func
 		case func(http.ResponseWriter, *http.Request, http.Handler):
 			f = func(curr MiddlewareFunc, next http.Handler) http.HandlerFunc {
