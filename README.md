@@ -51,10 +51,10 @@ $ go get github.com/Alma-media/go-middleware
     ```
 
 2. Build the handler with `Chain()` (variadic) func which accepts the next list of argument types:
-- `Middleware`
-- `func(http.Handler) http.Handler`
 - `http.Handler` and everything else that implements this interface (for instance, `http.HandlerFunc`)
 - `func(w http.ResponseWriter, r *http.Request)`
+- `MiddlewareFunc`/`func(http.ResponseWriter, *http.Request, http.Handler)`
+- `Middleware`/`func(http.Handler) http.Handler`
 
     There is no sense to provide entire example since import and variable declaration sections are going to be the same, only `main()` func is going to be changed:
 
