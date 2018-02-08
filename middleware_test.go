@@ -31,6 +31,18 @@ var (
 		})
 	}
 
+	middlewareFuncOne = func(w http.ResponseWriter, r *http.Request, next http.Handler) {
+		w.Write([]byte("/mw func1 before next"))
+		next.ServeHTTP(w, r)
+		w.Write([]byte("/mw func1 after next"))
+	}
+
+	middlewareFuncTwo = func(w http.ResponseWriter, r *http.Request, next http.Handler) {
+		w.Write([]byte("/mw func2 before next"))
+		next.ServeHTTP(w, r)
+		w.Write([]byte("/mw func2 after next"))
+	}
+
 	middlewareBreak Middleware = func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("/skip the rest"))
@@ -136,12 +148,16 @@ func Test_Chain(t *testing.T) {
 			args: []interface{}{
 				middlewareOne,
 				Middleware(middlewareTwo),
+				middlewareFuncOne,
+				MiddlewareFunc(middlewareFuncTwo),
 				handlerOne,
 				http.HandlerFunc(handlerTwo),
 				middlewareThree,
 				handlerFinal,
 			},
-			out: "/mw1 before next/mw2 before next/first handler/second handler/mw3 before next/final handler/blob handler/mw3 after next/mw2 after next/mw1 after next",
+			out: "/mw1 before next/mw2 before next/mw func1 before next/mw func2 before next" +
+				"/first handler/second handler/mw3 before next/final handler/blob handler" +
+				"/mw3 after next/mw func2 after next/mw func1 after next/mw2 after next/mw1 after next",
 		},
 	}
 

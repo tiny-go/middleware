@@ -5,8 +5,13 @@ import (
 	"net/http"
 )
 
+// MiddlewareFunc is a classic middleware - decides itself whether to call next
+// handler or return an HTTP error directly to the client and breaks the chain.
+type MiddlewareFunc func(http.ResponseWriter, *http.Request, http.Handler)
+
 // Middleware in itself simply takes a http.Handler as the first parameter, wraps
-// it and returns a new http.Handler for the server to call.
+// it and returns a new http.Handler for the server to call (wraps handlers with
+// closures according to the principle of Russian doll).
 type Middleware func(http.Handler) http.Handler
 
 // New is a Middleware constructor func. The call without arguments returns an
@@ -50,14 +55,12 @@ var blobHandler = func(w http.ResponseWriter, r *http.Request) {}
 
 // Chain builds a http.Handler from passed arguments. It accepts different
 // kinds of argument types:
-//
-// - Middleware - can break the chain inside
-//
-// - func(http.Handler) http.Handler - same with Middleware
-//
-// - http.Handler - next will be called in any case
-//
-// - func(w http.ResponseWriter, r *http.Request) - same with http.Handler
+// 	- MiddlewareFunc
+// 	- func(http.ResponseWriter, *http.Request, http.Handler)
+// 	- Middleware
+// 	- func(http.Handler) http.Handler
+// 	- http.Handler
+// 	- func(w http.ResponseWriter, r *http.Request)
 //
 // Keep in mind:
 //
@@ -73,10 +76,22 @@ func Chain(handlers ...interface{}) http.Handler {
 	// apply middleware/handlers from the last to the first one
 	for i := range handlers {
 		switch t := handlers[len(handlers)-1-i].(type) {
-		// wrap existing handler (or blobHandler) with a func
+		// build the handler from classic middleware func
+		case func(http.ResponseWriter, *http.Request, http.Handler):
+			f = func(curr MiddlewareFunc, next http.Handler) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					curr(w, r, next)
+				}
+			}(t, f)
+		case MiddlewareFunc:
+			f = func(curr MiddlewareFunc, next http.Handler) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					curr(w, r, next)
+				}
+			}(t, f)
+		// wrap existing handler (or blobHandler) with a Middleware/func
 		case func(http.Handler) http.Handler:
 			f = t(f)
-		// wrap existing handler (or blobHandler) with a Middleware
 		case Middleware:
 			f = t(f)
 		// ordinary functions can also be provided as arguments, in such case they
