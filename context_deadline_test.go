@@ -12,9 +12,8 @@ import (
 func do(ctx context.Context, handler func(stop <-chan struct{}) error) error {
 	// error chan
 	errChan := make(chan error, 1)
-	stopChan := make(chan struct{}, 1)
 	// call handler in goroutine
-	go func() { errChan <- handler(stopChan) }()
+	go func() { errChan <- handler(ctx.Done()) }()
 	// wait until context deadline or job is done
 	select {
 	// job was done
@@ -22,8 +21,6 @@ func do(ctx context.Context, handler func(stop <-chan struct{}) error) error {
 		return err
 	// timeout
 	case <-ctx.Done():
-		// send stop signal to the handler
-		stopChan <- struct{}{}
 		return ctx.Err()
 	}
 }
