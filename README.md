@@ -13,6 +13,12 @@ Since `go-middleware` is an open source project and repository is public you can
 $ go get github.com/Alma-media/go-middleware
 ```
 
+### Currently available middleware
+- `BodyClose` - closes request body for each request
+- `ContextDeadline` - sets request timeout (demands additional logic in your app)
+- `PanicRecover` - catches the panics inside our chain
+- `SetHeaders` - provides an easy way to set response headers
+
 ### Examples
 
 1. Build the handler using middleware chaining functions:
