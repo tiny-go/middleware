@@ -1,7 +1,6 @@
 package mw
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -9,25 +8,9 @@ import (
 	"time"
 )
 
-func do(ctx context.Context, handler func(stop <-chan struct{}) error) error {
-	// error chan
-	errChan := make(chan error, 1)
-	// call handler in goroutine
-	go func() { errChan <- handler(ctx.Done()) }()
-	// wait until context deadline or job is done
-	select {
-	// job was done
-	case err := <-errChan:
-		return err
-	// timeout
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-}
-
 func handler100MSec(w http.ResponseWriter, r *http.Request) {
 	var values []int
-	err := do(r.Context(), func(stop <-chan struct{}) error {
+	err := Go(r.Context(), func(stop <-chan struct{}) error {
 		for i := 0; i < 10; i++ {
 			values = append(values, i)
 			select {
