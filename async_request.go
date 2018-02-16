@@ -5,7 +5,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
-	"log"
 	"net/http"
 	"time"
 )
@@ -44,9 +43,10 @@ var (
 
 // HandlerTask represents sync/async handler task.
 type HandlerTask interface {
-	Do(context.Context, func(<-chan struct{}) error) error
+	Do(context.Context, func(<-chan struct{}) error)
 	Status() JobStatus
 	Resolve() (interface{}, error)
+	// Error()
 	Complete(interface{}, error) error
 }
 
@@ -79,14 +79,13 @@ func (t *task) Resolve() (interface{}, error) {
 func (t *task) Complete(data interface{}, err error) error {
 	switch t.status {
 	case StatusWaiting:
-		t.data, t.error = nil, ErrNotStarted
+		return ErrNotStarted
 	case StatusDone:
-		t.data, t.error = nil, ErrAlreadyDone
+		return ErrAlreadyDone
 	default:
-		t.data, t.error = data, err
+		t.data, t.error, t.status, t.finished = data, err, StatusDone, time.Now()
+		return err
 	}
-	t.status, t.finished = StatusDone, time.Now()
-	return t.error
 }
 
 // syncTask represents synchronous handler job.
@@ -99,8 +98,7 @@ func newSyncTask(reqTimeout time.Duration) *syncTask {
 	return &syncTask{task: &task{}}
 }
 
-func (st *syncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) error) error {
-	log.Println("SYNC DO")
+func (st *syncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) error) {
 	// memorize start time and change job status
 	st.status, st.started = StatusInProgress, time.Now()
 	// error chan
@@ -111,12 +109,12 @@ func (st *syncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) e
 	select {
 	// job was done
 	case err := <-errChan:
-		return err
-	// timeout
+		st.Complete(nil, err)
+	// or timeout is reached
 	case <-ctx.Done():
-		// send context deadline
-		return ctx.Err()
+		st.Complete(nil, ctx.Err())
 	}
+	return
 }
 
 // asyncTask represents asynchronous handler job.
@@ -138,7 +136,7 @@ func newAsyncTask(execTimeout time.Duration) *asyncTask {
 }
 
 // Do handles asynchronous execution of the handler.
-func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) error) error {
+func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) error) {
 	// memorize start time and change job status
 	at.status, at.started = StatusInProgress, time.Now()
 	// error chan
@@ -154,6 +152,8 @@ func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) 
 				<-time.NewTimer(at.asyncTimeout).C
 				//channel may be closed after job is done (in some time)
 				close(ch)
+				//
+				at.Complete(nil, context.DeadlineExceeded)
 			}()
 			return ch
 		}())
@@ -162,18 +162,24 @@ func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) 
 	select {
 	// job was done
 	case err := <-errChan:
-		return err
+		// task should be completed in case if Complete has not been called in the
+		// handler, for instance error was returned without wrapping with Complete
+		// or Error func ("force complete")
+		at.Complete(nil, err)
 	// timeout
 	case <-ctx.Done():
-		// request timeout (but this is not an error and handler probably is still running)
-		return nil
+		// request timeout, but this is not an error for async requests and handler
+		// probably is still running
 	}
+	return
 }
 
 // AsyncRequest middleware provides a mechanism to request the data again after timeout.
 // 	reqTimeout - time allotted for processing HTTP request, if request has not been
 // processed completely - returns an ID of request (to retrieve result later).
-// 	asyncTimeout - maximum time for async job to be done (actual context deadline).
+// 	asyncTimeout - maximum time for async job to be done (actual context deadline),
+// this logic should be implemented in asynchronous handler or skipped - in that case
+// handler cannot be interrupted.
 func AsyncRequest(reqTimeout, asyncTimeout time.Duration) Middleware {
 	// create a new Middleware
 	return func(next http.Handler) http.Handler {
@@ -181,9 +187,6 @@ func AsyncRequest(reqTimeout, asyncTimeout time.Duration) Middleware {
 		return ContextDeadline(reqTimeout)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// current job (can be sync/async)
 			var currJob HandlerTask
-
-			log.Println(asyncJobs)
-
 			// check if async request, if not - ignore the next code block
 			if _, ok := r.Header[asyncHeader]; ok {
 				// current request
