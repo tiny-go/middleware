@@ -28,13 +28,18 @@ const (
 	asyncContextKey contextKey = "async-request"
 )
 
-// TODO: sync.Map
-var asyncJobs = map[string]*Async{}
+// TODO: use sync.Map or mutex
+var asyncJobs = map[string]*asyncTask{}
+
+var (
+	ErrNotCompleted = errors.New("current job has not been completed")
+	ErrNotStarted   = errors.New("job has not been started")
+	ErrAlreadyDone  = errors.New("job already completed")
+)
 
 // TODO: async pool (watcher.Add(task)) with watcher which can finish and remove expired tasks
 
-// TODO:
-// Task ...
+// HandlerTask ...
 type HandlerTask interface {
 	Do(context.Context, func(<-chan struct{}) error) error
 	Status() JobStatus
@@ -42,64 +47,113 @@ type HandlerTask interface {
 	Complete(interface{}, error) error
 }
 
-// TODO:
-// Sync ...
-type Sync struct {
-}
-
-// Async represents asynchronous handler job.
-type Async struct {
-	ID string
-
+type task struct {
+	// returning params
 	data  interface{}
 	error error
-
-	status   JobStatus
-	started  time.Time
-	finished time.Time
-	// TODO: use it!!!
+	// service fields
+	status       JobStatus
+	started      time.Time
+	finished     time.Time
 	asyncTimeout time.Duration
 }
 
-// newAsync ... TODO: private
-func newAsync() *Async {
-	id := md5.Sum([]byte(time.Now().String()))
-	return &Async{
-		ID: hex.EncodeToString(id[:]),
-	}
-}
-
 // Status returns status of the current task.
-func (t *Async) Status() JobStatus {
+func (t *task) Status() JobStatus {
 	return t.status
 }
 
-// Resolve ...
-func (t *Async) Resolve() (interface{}, error) {
+// Resolve returns the result of handler execution and an error.
+func (t *task) Resolve() (interface{}, error) {
+	if t.status != StatusDone {
+		return nil, ErrNotCompleted
+	}
 	return t.data, t.error
 }
 
 // Complete the task.
-func (t *Async) Complete(data interface{}, err error) error {
+func (t *task) Complete(data interface{}, err error) error {
 	switch t.status {
 	case StatusWaiting:
-		return errors.New("job has not been started")
+		t.data, t.error = nil, ErrNotStarted
 	case StatusDone:
-		return errors.New("job already completed")
+		t.data, t.error = nil, ErrAlreadyDone
 	default:
-		t.data, t.error, t.status, t.finished = data, err, StatusDone, time.Now()
-		return nil
+		t.data, t.error = data, err
+	}
+	t.status, t.finished = StatusDone, time.Now()
+	return t.error
+}
+
+// syncTask represents synchronous handler job.
+type syncTask struct {
+	*task
+}
+
+// newAsyncTask is a constructor func for synchronous job.
+func newSyncTask(reqTimeout time.Duration) *syncTask {
+	return &syncTask{task: &task{}}
+}
+
+func (st *syncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) error) error {
+	log.Println("SYNC DO")
+	// memorize start time and change job status
+	st.status, st.started = StatusInProgress, time.Now()
+	// error chan
+	errChan := make(chan error, 1)
+	// call handler in goroutine
+	go func() { errChan <- handler(ctx.Done()) }()
+	// wait until context deadline or job is done
+	select {
+	// job was done
+	case err := <-errChan:
+		return err
+	// timeout
+	case <-ctx.Done():
+		// send context deadline
+		return ctx.Err()
 	}
 }
 
-// Do ...
-func (t *Async) Do(ctx context.Context, handler func(stop <-chan struct{}) error) error {
+// asyncTask represents asynchronous handler job.
+type asyncTask struct {
+	*task
+	// request unique ID
+	ID string
+}
+
+// newAsyncTask is a constructor func for asynchronous job.
+func newAsyncTask(execTimeout time.Duration) *asyncTask {
+	id := md5.Sum([]byte(time.Now().String()))
+	return &asyncTask{
+		ID: hex.EncodeToString(id[:]),
+		task: &task{
+			asyncTimeout: execTimeout,
+		},
+	}
+}
+
+// Do handles asynchronous execution of the handler.
+func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) error) error {
 	// memorize start time and change job status
-	t.status, t.started = StatusInProgress, time.Now()
+	at.status, at.started = StatusInProgress, time.Now()
 	// error chan
 	errChan := make(chan error, 1)
 	// call handler in goroutine TODO: inject new context with new ASYNC deadline here
-	go func() { errChan <- handler(ctx.Done()) }()
+	go func() {
+		// call the handler with actual (execution) timeout channel
+		errChan <- handler(func() <-chan struct{} {
+			// context deadline channel
+			ch := make(chan struct{}, 1)
+			// run timer in a new goroutine
+			go func() {
+				<-time.NewTimer(at.asyncTimeout).C
+				//channel may be closed after job is done (in some time)
+				close(ch)
+			}()
+			return ch
+		}())
+	}()
 	// wait until context deadline or job is done
 	select {
 	// job was done
@@ -112,68 +166,78 @@ func (t *Async) Do(ctx context.Context, handler func(stop <-chan struct{}) error
 	}
 }
 
-// TODO: come up with sync/async timeout params for request and process
-
 // AsyncRequest middleware provides a mechanism to request the data again after timeout.
-func AsyncRequest(asyncTimeout time.Duration) Middleware {
+// 	reqTimeout - time allotted for processing HTTP request, if request has not been
+// processed completely - returns an ID of request (to retrieve result later).
+// 	asyncTimeout - maximum time for async job to be done (actual context deadline).
+func AsyncRequest(reqTimeout, asyncTimeout time.Duration) Middleware {
 	// create a new Middleware
 	return func(next http.Handler) http.Handler {
 		// define the httprouter.Handle
-		return ContextDeadline(asyncTimeout)(
-			http.HandlerFunc(
-				func(w http.ResponseWriter, r *http.Request) {
+		return ContextDeadline(reqTimeout)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// current job (can be sync/async)
+			var currJob HandlerTask
 
-					log.Println(asyncJobs)
+			log.Println(asyncJobs)
 
-					// check if async request, if not - ignore the next code block
-					if _, ok := r.Header[asyncHeader]; ok {
-						// current request
-						var async *Async
-						// if contains ID - it is not a new request
-						if requestID := r.Header.Get(asyncRequestID); requestID != "" {
-							var ok bool
-							// find async job
-							if async, ok = asyncJobs[requestID]; !ok {
-								// async request is expired or has invalid ID
-								http.Error(w, "invalid or expired request", http.StatusBadRequest)
-								// skip next handlers
-								return
-							}
-						} else {
-							// create new async task
-							async = newAsync()
-							// store job in the list
-							asyncJobs[async.ID] = async
-						}
-						// get context from request
-						ctx := r.Context()
-						// put async task to the context
-						ctx = context.WithValue(ctx, asyncContextKey, async)
-						// replace request
-						r = r.WithContext(ctx)
-						// check async on exit and remove if it's done
-						defer func() {
-							if async.status == StatusDone {
-								delete(asyncJobs, async.ID)
-							} else {
-								// return request ID
-								w.Header().Set(asyncRequestID, async.ID)
-								// the status ot request is "accepted"
-								w.WriteHeader(http.StatusAccepted)
-								// provide a basic info message to the client
-								w.Write([]byte("request is in progress"))
-							}
-						}()
+			// check if async request, if not - ignore the next code block
+			if _, ok := r.Header[asyncHeader]; ok {
+				// current request
+				var async *asyncTask
+				// if contains ID - it is not a new request
+				if requestID := r.Header.Get(asyncRequestID); requestID != "" {
+					var ok bool
+					// find async job
+					if async, ok = asyncJobs[requestID]; !ok {
+						// async request is expired or has invalid ID
+						http.Error(w, "invalid or expired request", http.StatusBadRequest)
+						// skip next middleware/handlers
+						return
 					}
-					// call next handler
-					next.ServeHTTP(w, r)
-				},
-			),
-		)
+				} else {
+					// create new async task
+					async = newAsyncTask(asyncTimeout)
+					//  and store in the list
+					asyncJobs[async.ID] = async
+				}
+				// set current job
+				currJob = async
+				// check async on exit and remove if it's done
+				defer func() {
+					if async.status == StatusDone {
+						delete(asyncJobs, async.ID)
+					} else {
+						// return request ID
+						w.Header().Set(asyncRequestID, async.ID)
+						// the status ot request is "accepted"
+						w.WriteHeader(http.StatusAccepted)
+						// provide a basic info message to the client
+						w.Write([]byte("request is in progress"))
+					}
+				}()
+			} else {
+				// create synchronous job
+				currJob = newSyncTask(reqTimeout)
+				// send timeout code on exit if synchronous job was not done
+				defer func() {
+					if _, err := currJob.Resolve(); err == ErrNotCompleted {
+						http.Error(w, ErrNotCompleted.Error(), http.StatusRequestTimeout)
+					}
+				}()
+			}
+			// get context from request
+			ctx := r.Context()
+			// put async task to the context
+			ctx = context.WithValue(ctx, asyncContextKey, currJob)
+			// replace request
+			r = r.WithContext(ctx)
+			// call next handler
+			next.ServeHTTP(w, r)
+		}))
 	}
 }
 
-// GetHandlerTask ...
+// GetHandlerTask extracts current job from context.
 func GetHandlerTask(ctx context.Context) (HandlerTask, bool) {
 	async, ok := ctx.Value(asyncContextKey).(HandlerTask)
 	return async, ok
