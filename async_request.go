@@ -32,14 +32,17 @@ const (
 var asyncJobs = map[string]*asyncTask{}
 
 var (
+	// ErrNotCompleted - current job was not completed.
 	ErrNotCompleted = errors.New("current job has not been completed")
-	ErrNotStarted   = errors.New("job has not been started")
-	ErrAlreadyDone  = errors.New("job already completed")
+	// ErrNotStarted - current job was not startd.
+	ErrNotStarted = errors.New("job has not been started")
+	// ErrAlreadyDone - current job has been already done.
+	ErrAlreadyDone = errors.New("job already completed")
 )
 
 // TODO: async pool (watcher.Add(task)) with watcher which can finish and remove expired tasks
 
-// HandlerTask ...
+// HandlerTask represents sync/async handler task.
 type HandlerTask interface {
 	Do(context.Context, func(<-chan struct{}) error) error
 	Status() JobStatus
@@ -47,6 +50,7 @@ type HandlerTask interface {
 	Complete(interface{}, error) error
 }
 
+// base task for sync/async jobs.
 type task struct {
 	// returning params
 	data  interface{}
