@@ -11,16 +11,16 @@ import (
 )
 
 const (
-	// AsyncWaiting is initial status - job is not started yet
-	AsyncWaiting AsyncStatus = iota
-	// AsyncInProgress indicates that job is started but not finished yet
-	AsyncInProgress
-	// AsyncDone task is done
-	AsyncDone
+	// StatusWaiting is initial status - job is not started yet
+	StatusWaiting JobStatus = iota
+	// StatusInProgress indicates that job is started but not finished yet
+	StatusInProgress
+	// StatusDone task is done
+	StatusDone
 )
 
-// AsyncStatus represents the status of asynchronous task.
-type AsyncStatus int
+// JobStatus represents the status of asynchronous task.
+type JobStatus int
 
 const (
 	asyncHeader                = "Async-Request"
@@ -28,13 +28,18 @@ const (
 	asyncContextKey contextKey = "async-request"
 )
 
+// TODO: sync.Map
 var asyncJobs = map[string]*Async{}
 
 // TODO: async pool (watcher.Add(task)) with watcher which can finish and remove expired tasks
 
 // TODO:
 // Task ...
-type Task interface {
+type HandlerTask interface {
+	Do(context.Context, func(<-chan struct{}) error) error
+	Status() JobStatus
+	Resolve() (interface{}, error)
+	Complete(interface{}, error) error
 }
 
 // TODO:
@@ -46,18 +51,18 @@ type Sync struct {
 type Async struct {
 	ID string
 
-	Data  interface{}
-	Error error
+	data  interface{}
+	error error
 
-	status   AsyncStatus
+	status   JobStatus
 	started  time.Time
 	finished time.Time
 	// TODO: use it!!!
 	asyncTimeout time.Duration
 }
 
-// NewAsync ...
-func NewAsync() *Async {
+// newAsync ... TODO: private
+func newAsync() *Async {
 	id := md5.Sum([]byte(time.Now().String()))
 	return &Async{
 		ID: hex.EncodeToString(id[:]),
@@ -65,19 +70,24 @@ func NewAsync() *Async {
 }
 
 // Status returns status of the current task.
-func (t *Async) Status() AsyncStatus {
+func (t *Async) Status() JobStatus {
 	return t.status
 }
 
+// Resolve ...
+func (t *Async) Resolve() (interface{}, error) {
+	return t.data, t.error
+}
+
 // Complete the task.
-func (t *Async) Complete(err error) error {
+func (t *Async) Complete(data interface{}, err error) error {
 	switch t.status {
-	case AsyncWaiting:
+	case StatusWaiting:
 		return errors.New("job has not been started")
-	case AsyncDone:
+	case StatusDone:
 		return errors.New("job already completed")
 	default:
-		t.Error, t.status, t.finished = err, AsyncDone, time.Now()
+		t.data, t.error, t.status, t.finished = data, err, StatusDone, time.Now()
 		return nil
 	}
 }
@@ -85,7 +95,7 @@ func (t *Async) Complete(err error) error {
 // Do ...
 func (t *Async) Do(ctx context.Context, handler func(stop <-chan struct{}) error) error {
 	// memorize start time and change job status
-	t.status, t.started = AsyncInProgress, time.Now()
+	t.status, t.started = StatusInProgress, time.Now()
 	// error chan
 	errChan := make(chan error, 1)
 	// call handler in goroutine TODO: inject new context with new ASYNC deadline here
@@ -131,7 +141,7 @@ func AsyncRequest(asyncTimeout time.Duration) Middleware {
 							}
 						} else {
 							// create new async task
-							async = NewAsync()
+							async = newAsync()
 							// store job in the list
 							asyncJobs[async.ID] = async
 						}
@@ -143,7 +153,7 @@ func AsyncRequest(asyncTimeout time.Duration) Middleware {
 						r = r.WithContext(ctx)
 						// check async on exit and remove if it's done
 						defer func() {
-							if async.status == AsyncDone {
+							if async.status == StatusDone {
 								delete(asyncJobs, async.ID)
 							} else {
 								// return request ID
@@ -151,7 +161,7 @@ func AsyncRequest(asyncTimeout time.Duration) Middleware {
 								// the status ot request is "accepted"
 								w.WriteHeader(http.StatusAccepted)
 								// provide a basic info message to the client
-								w.Write([]byte("request is still in progress"))
+								w.Write([]byte("request is in progress"))
 							}
 						}()
 					}
@@ -163,8 +173,8 @@ func AsyncRequest(asyncTimeout time.Duration) Middleware {
 	}
 }
 
-// GetAsyncFromContext ...
-func GetAsyncFromContext(ctx context.Context) (*Async, bool) {
-	async, ok := ctx.Value(asyncContextKey).(*Async)
+// GetHandlerTask ...
+func GetHandlerTask(ctx context.Context) (HandlerTask, bool) {
+	async, ok := ctx.Value(asyncContextKey).(HandlerTask)
 	return async, ok
 }
