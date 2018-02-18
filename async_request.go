@@ -102,6 +102,8 @@ func newSyncTask(reqTimeout time.Duration) *syncTask {
 	return &syncTask{task: &task{}}
 }
 
+// Do executes handler (handler should be a closure - otherwise you will not be
+// able to pass arguments to it or call Complete() in order to return some value).
 func (st *syncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) error) {
 	// memorize start time and change job status
 	st.status, st.started = StatusInProgress, time.Now()
@@ -124,7 +126,7 @@ func (st *syncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) e
 // asyncTask represents asynchronous handler job.
 type asyncTask struct {
 	*task
-	// request unique ID
+	// unique request ID
 	ID string
 }
 

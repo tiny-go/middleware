@@ -2,6 +2,7 @@ package mw
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -63,6 +64,47 @@ func handlerAsync(w http.ResponseWriter, r *http.Request) HandlerTask {
 	}
 	// return current task to be processed by handleResponse func
 	return job
+}
+
+func Test_task_Complete(t *testing.T) {
+	t.Run("should throw an error trying to complete the task which was already done", func(t *testing.T) {
+		job := &task{status: StatusDone}
+		if err := job.Complete(nil, nil); err != ErrAlreadyDone {
+			t.Errorf("should return error: %s", ErrAlreadyDone)
+		}
+	})
+	t.Run("should throw an error trying to complete the task which was not started", func(t *testing.T) {
+		job := &task{status: StatusWaiting}
+		if err := job.Complete(nil, nil); err != ErrNotStarted {
+			t.Errorf("should return error: %s", ErrNotStarted)
+		}
+	})
+	t.Run("should pass actual error trying to complete the task which is in progress", func(t *testing.T) {
+		job := &task{status: StatusInProgress}
+		actual := errors.New("Actual error")
+		if err := job.Complete(nil, actual); err != actual {
+			t.Errorf("should return error: %s", actual)
+		}
+	})
+}
+
+func Test_AsyncRequest_input_arguments(t *testing.T) {
+	t.Run("request timeout should be less than async timeout", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Error("the code should panic")
+			}
+		}()
+		AsyncRequest(100, 50, 80)(http.HandlerFunc(blobHandler))
+	})
+	t.Run("keep result should be greater than async timeout", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Error("the code should panic")
+			}
+		}()
+		AsyncRequest(100, 200, 150)(http.HandlerFunc(blobHandler))
+	})
 }
 
 func Test_AsyncRequest(t *testing.T) {
