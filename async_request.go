@@ -41,11 +41,17 @@ var asyncJobs = map[string]*asyncTask{}
 
 // HandlerTask represents sync/async handler task.
 type HandlerTask interface {
+	// Do should execute provided closure.
 	Do(context.Context, func(<-chan struct{}) error)
+	// Status should return the status of current job/task.
 	Status() JobStatus
-	Resolve() (interface{}, error)
-	// TODO: Error()
+	// Complete is supposed to be called inside Do's closure when job is done in
+	// order to change job status and be able to return the result by calling
+	// Resolve() func.
 	Complete(interface{}, error) error
+	// Resolve returns the result (which should be returned from the clousere using
+	// Complete()) and error.
+	Resolve() (interface{}, error)
 }
 
 // base task for sync/async jobs.
@@ -150,7 +156,7 @@ func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) 
 				<-time.NewTimer(at.asyncTimeout).C
 				//channel may be closed after job is done (in some time)
 				close(ch)
-				//
+				// complete the task with context deadline error
 				at.Complete(nil, context.DeadlineExceeded)
 			}()
 			return ch
@@ -230,7 +236,7 @@ func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware
 				// send timeout code on exit if synchronous job was not done
 				defer func() {
 					if _, err := currJob.Resolve(); err == ErrNotCompleted {
-						http.Error(w, ErrNotCompleted.Error(), http.StatusRequestTimeout)
+						http.Error(w, context.DeadlineExceeded.Error(), http.StatusRequestTimeout)
 					}
 				}()
 			}

@@ -93,7 +93,7 @@ func Test_AsyncRequest(t *testing.T) {
 						handleResponse(handlerAsync),
 					),
 					code: http.StatusRequestTimeout,
-					data: "task has not been completed\n",
+					data: "context deadline exceeded\n",
 				},
 				{
 					title: "sync request should be successful if handler has enough time to complete the task",
