@@ -27,9 +27,6 @@ const (
 	asyncContextKey contextKey = "async-request"
 )
 
-// TODO: use sync.Map or mutex
-var asyncJobs = map[string]*asyncTask{}
-
 var (
 	// ErrNotCompleted - current job was not completed.
 	ErrNotCompleted = errors.New("current job has not been completed")
@@ -39,6 +36,9 @@ var (
 	ErrAlreadyDone = errors.New("job already completed")
 )
 
+// TODO: use sync.Map or mutex or implement timap
+var asyncJobs = map[string]*asyncTask{}
+
 // TODO: async pool (watcher.Add(task)) with watcher which can finish and remove expired tasks
 
 // HandlerTask represents sync/async handler task.
@@ -46,7 +46,7 @@ type HandlerTask interface {
 	Do(context.Context, func(<-chan struct{}) error)
 	Status() JobStatus
 	Resolve() (interface{}, error)
-	// Error()
+	// TODO: Error()
 	Complete(interface{}, error) error
 }
 
@@ -180,7 +180,11 @@ func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) 
 // 	asyncTimeout - maximum time for async job to be done (actual context deadline),
 // this logic should be implemented in asynchronous handler or skipped - in that case
 // handler cannot be interrupted.
-func AsyncRequest(reqTimeout, asyncTimeout time.Duration) Middleware {
+func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware {
+	// no sense to use this middleware if the following condition is not satisfied
+	if !(reqTimeout < asyncTimeout && asyncTimeout < keepResult) {
+		panic("request timeout should be less than asyncTimeout and keep result should be greater than asyncTimeout")
+	}
 	// create a new Middleware
 	return func(next http.Handler) http.Handler {
 		// define the httprouter.Handle
