@@ -183,7 +183,7 @@ func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) 
 func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware {
 	// no sense to use this middleware if the following condition is not satisfied
 	if !(reqTimeout < asyncTimeout && asyncTimeout < keepResult) {
-		panic("request timeout should be less than asyncTimeout and keep result should be greater than asyncTimeout")
+		panic("request timeout should be less than async timeout and keep result should be greater than async timeout")
 	}
 	// create a new Middleware
 	return func(next http.Handler) http.Handler {
@@ -223,7 +223,7 @@ func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware
 						// the status ot request is "accepted"
 						w.WriteHeader(http.StatusAccepted)
 						// provide a basic info message to the client
-						w.Write([]byte("request is in progress"))
+						w.Write([]byte("request is in progress\n"))
 					}
 				}()
 			} else {
