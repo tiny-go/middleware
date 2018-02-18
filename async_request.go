@@ -39,8 +39,6 @@ var (
 // TODO: use sync.Map or mutex or implement timap
 var asyncJobs = map[string]*asyncTask{}
 
-// TODO: async pool (watcher.Add(task)) with watcher which can finish and remove expired tasks
-
 // HandlerTask represents sync/async handler task.
 type HandlerTask interface {
 	Do(context.Context, func(<-chan struct{}) error)
