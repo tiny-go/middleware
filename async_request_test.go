@@ -2,7 +2,9 @@ package mw
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 )
@@ -38,13 +40,13 @@ func handlerAsync(w http.ResponseWriter, r *http.Request) HandlerTask {
 	// start the job if it is new one, otherwise pass the job to handleResponse func
 	if job.Status() == StatusWaiting {
 		// define reply type
-		var reply struct{ Numbers []int }
+		var reply []int
 		// start the job
 		job.Do(r.Context(), func(stop <-chan struct{}) error {
 			// emulate task which takes a lot of time to complete
-			for i := 0; i < 100; i++ {
+			for i := 0; i < 10; i++ {
 				// add values one by one
-				reply.Numbers = append(reply.Numbers, i)
+				reply = append(reply, i)
 				// catch stop signal or wait
 				select {
 				// request timeout (context deadline - stopped externally)
@@ -53,11 +55,10 @@ func handlerAsync(w http.ResponseWriter, r *http.Request) HandlerTask {
 					return nil
 				// wait
 				default:
-					time.Sleep(time.Millisecond)
+					time.Sleep(10 * time.Millisecond)
 				}
 			}
-			// do not forget to complete the task (otherwise it will stay "in progress"
-			// forever)
+			// do not forget to complete the task (otherwise it will stay "in progress" forever)
 			return job.Complete(reply, nil)
 		})
 	}
@@ -66,5 +67,66 @@ func handlerAsync(w http.ResponseWriter, r *http.Request) HandlerTask {
 }
 
 func Test_AsyncRequest(t *testing.T) {
+	type request struct {
+		title   string
+		handler http.Handler
+		headers http.Header
+		timeout time.Duration
+		code    int
+		data    string
+	}
 
+	type testCase struct {
+		title    string
+		requests []request
+	}
+
+	cases := []testCase{
+		{
+			title: "async middleware with synchronous call",
+			requests: []request{
+				{
+					title: "sync request should fail with timeout error if handler does not have enough time to complete the task",
+					handler: AsyncRequest(10*time.Millisecond, 20*time.Millisecond, 30*time.Millisecond)(
+						handleResponse(handlerAsync),
+					),
+					code: http.StatusRequestTimeout,
+					data: "task has not been completed\n",
+				},
+				{
+					title: "sync request should be successful if handler has enough time to complete the task",
+					handler: AsyncRequest(200*time.Millisecond, 300*time.Millisecond, 500*time.Millisecond)(
+						handleResponse(handlerAsync),
+					),
+					code: http.StatusOK,
+					data: "[0,1,2,3,4,5,6,7,8,9]\n",
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.title, func(t *testing.T) {
+
+			log.Println(asyncJobs)
+
+			for _, req := range tc.requests {
+				t.Run(req.title, func(t *testing.T) {
+					// sleep before request
+					time.Sleep(req.timeout)
+					w := httptest.NewRecorder()
+					r, _ := http.NewRequest("", "", nil)
+					req.handler.ServeHTTP(w, r)
+					// compare status code
+					if w.Code != req.code {
+						t.Errorf("status code %d is expected to be %d", w.Code, req.code)
+					}
+					// compare response body
+					if w.Body.String() != req.data {
+						t.Errorf("the output %q is expected to be %q", w.Body.String(), req.data)
+					}
+				})
+			}
+		})
+	}
 }

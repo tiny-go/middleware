@@ -29,7 +29,7 @@ const (
 
 var (
 	// ErrNotCompleted - current job was not completed.
-	ErrNotCompleted = errors.New("current job has not been completed")
+	ErrNotCompleted = errors.New("task has not been completed")
 	// ErrNotStarted - current job was not startd.
 	ErrNotStarted = errors.New("job has not been started")
 	// ErrAlreadyDone - current job has been already done.
@@ -112,7 +112,7 @@ func (st *syncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) e
 		st.Complete(nil, err)
 	// or timeout is reached
 	case <-ctx.Done():
-		st.Complete(nil, ctx.Err())
+		// ignore - 408 response will be sent by AsyncRequest func
 	}
 	return
 }
