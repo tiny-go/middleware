@@ -141,7 +141,7 @@ func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) 
 	at.status, at.started = StatusInProgress, time.Now()
 	// error chan
 	errChan := make(chan error, 1)
-	// call handler in goroutine TODO: inject new context with new ASYNC deadline here
+	// call handler in goroutine
 	go func() {
 		// call the handler with actual (execution) timeout channel
 		errChan <- handler(func() <-chan struct{} {

@@ -14,13 +14,20 @@ func handleResponse(handler func(w http.ResponseWriter, r *http.Request) Handler
 		job := handler(w, r)
 		// read the result
 		data, err := job.Resolve()
-		// break if job is in a progress
-		if err != nil && err != ErrNotCompleted {
-			// done with error
-			http.Error(w, err.Error(), 500)
-		} else {
-			// job was successfully done - return the result
+		// check error
+		switch err {
+		// job was successfully done
+		case nil:
+			// send the response
 			json.NewEncoder(w).Encode(data)
+		// do nothing: middleware will send the response depending on request type
+		case ErrNotCompleted:
+			// return or ignore
+			return
+		// done with error
+		default:
+			// send error
+			http.Error(w, err.Error(), 500)
 		}
 	}
 }
