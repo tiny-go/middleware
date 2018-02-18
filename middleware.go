@@ -5,6 +5,10 @@ import (
 	"net/http"
 )
 
+// contextKey is a type which is used internally by the package to have its own
+// key (types) that never collide.
+type contextKey string
+
 // MiddlewareFunc is a classic middleware - decides itself whether to call next
 // handler or return an HTTP error directly to the client and breaks the chain.
 type MiddlewareFunc func(http.ResponseWriter, *http.Request, http.Handler)

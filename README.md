@@ -19,6 +19,10 @@ $ go get github.com/Alma-media/go-middleware
 - `PanicRecover` - catches the panics inside our chain
 - `SetHeaders` - provides an easy way to set response headers
 
+### Experimental middleware
+It means that work is still in progress, a lot of things can be changed or even completely removed
+- `AsyncRequest` - allows to set `request timeout` (for HTTP request) and `async timeout` (for background execution), if request has not been processed during `request timeout` - middleware returns `request ID` and HTTP code 202 (`Accepted`). You can make a new request wtih given `request ID` later to obtain the result. The result can be provided only once and won't be available after that anymore. If handler did not finish its task during `async timeout` - middleware sends an HTTP error with code 408 (`RequestTimeout`) executing next async request with current `request ID`.
+
 ### Examples
 
 1. Build the handler using middleware chaining functions:
