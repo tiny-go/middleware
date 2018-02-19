@@ -10,11 +10,11 @@ import (
 )
 
 const (
-	// StatusWaiting is initial status - job is not started yet
+	// StatusWaiting is initial status - job is not started yet.
 	StatusWaiting JobStatus = iota
-	// StatusInProgress indicates that job is started but not finished yet
+	// StatusInProgress indicates that job is started but not finished yet.
 	StatusInProgress
-	// StatusDone task is done
+	// StatusDone indicates that task was done.
 	StatusDone
 )
 
@@ -30,7 +30,7 @@ const (
 var (
 	// ErrNotCompleted - current job was not completed.
 	ErrNotCompleted = errors.New("task has not been completed")
-	// ErrNotStarted - current job was not startd.
+	// ErrNotStarted - current job was not started.
 	ErrNotStarted = errors.New("job has not been started")
 	// ErrAlreadyDone - current job has been already done.
 	ErrAlreadyDone = errors.New("job already completed")
@@ -56,14 +56,13 @@ type HandlerTask interface {
 
 // base task for sync/async jobs.
 type task struct {
-	// returning params
-	data  interface{}
-	error error
-	// service fields
 	status       JobStatus
 	started      time.Time
 	finished     time.Time
 	asyncTimeout time.Duration
+	// returning params
+	data  interface{}
+	error error
 }
 
 // Status returns status of the current task.
@@ -79,7 +78,7 @@ func (t *task) Resolve() (interface{}, error) {
 	return t.data, t.error
 }
 
-// Complete the task.
+// Complete the task with some result and error, change status to "done".
 func (t *task) Complete(data interface{}, err error) error {
 	switch t.status {
 	case StatusWaiting:
@@ -156,7 +155,7 @@ func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) 
 			// run timer in a new goroutine
 			go func() {
 				<-time.NewTimer(at.asyncTimeout).C
-				//channel may be closed after job is done (in some time)
+				// channel may be closed after job is done (in some time)
 				close(ch)
 				// complete the task with context deadline error
 				at.Complete(nil, context.DeadlineExceeded)
@@ -169,12 +168,11 @@ func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) 
 	// job was done
 	case err := <-errChan:
 		// task should be completed in case if Complete has not been called in the
-		// handler, for instance error was returned without wrapping with Complete
-		// or Error func ("force complete")
+		// handler (for instance error was returned without wrapping with Complete)
 		at.Complete(nil, err)
 	// timeout
 	case <-ctx.Done():
-		// request timeout, but this is not an error for async requests and handler
+		// request timeout, this is not the error for async requests because handler
 		// probably is still running
 	}
 	return
