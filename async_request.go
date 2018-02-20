@@ -7,6 +7,8 @@ import (
 	"errors"
 	"net/http"
 	"time"
+
+	timap "github.com/Alma-media/go-timap"
 )
 
 const (
@@ -35,9 +37,6 @@ var (
 	// ErrAlreadyDone - current job has been already done.
 	ErrAlreadyDone = errors.New("job already completed")
 )
-
-// TODO: use sync.Map or mutex or implement timap
-var asyncJobs = map[string]*asyncTask{}
 
 // HandlerTask represents sync/async handler task.
 type HandlerTask interface {
@@ -189,6 +188,8 @@ func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware
 	if !(reqTimeout < asyncTimeout && asyncTimeout < keepResult) {
 		panic("request timeout should be less than async timeout and keep result should be greater than async timeout")
 	}
+	// each handler has its own task list
+	var asyncJobs = timap.New(keepResult)
 	// create a new Middleware
 	return func(next http.Handler) http.Handler {
 		// define the httprouter.Handle
@@ -201,26 +202,27 @@ func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware
 				var async *asyncTask
 				// if contains ID - it is not a new request
 				if requestID := r.Header.Get(asyncRequestID); requestID != "" {
-					var ok bool
 					// find async job
-					if async, ok = asyncJobs[requestID]; !ok {
+					val, ok := asyncJobs.Load(requestID)
+					if !ok {
 						// async request is expired or has invalid ID
 						http.Error(w, "invalid or expired request", http.StatusBadRequest)
 						// skip next middleware/handlers
 						return
 					}
+					async = val.(*asyncTask)
 				} else {
 					// create new async task
 					async = newAsyncTask(asyncTimeout)
 					//  and store in the list
-					asyncJobs[async.ID] = async
+					asyncJobs.Store(async.ID, async)
 				}
 				// set current job
 				currJob = async
 				// check async on exit and remove if it's done
 				defer func() {
 					if async.status == StatusDone {
-						delete(asyncJobs, async.ID)
+						asyncJobs.Delete(async.ID)
 					} else {
 						// return request ID
 						w.Header().Set(asyncRequestID, async.ID)
