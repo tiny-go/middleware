@@ -109,95 +109,120 @@ func Test_AsyncRequest_input_arguments(t *testing.T) {
 
 func Test_AsyncRequest(t *testing.T) {
 	type request struct {
-		title    string
-		handler  http.Handler
-		timeout  time.Duration
-		queueLen int
-		hasID    bool
-		code     int
-		data     string
+		title   string
+		timeout time.Duration
+		hasID   bool
+		code    int
+		data    string
 	}
 
 	type testCase struct {
 		title    string
 		headers  map[string]string
+		handler  http.Handler
 		requests []request
 	}
 
 	cases := []testCase{
 		{
-			title:   "async middleware with synchronous calls",
+			title:   "async middleware with synchronous request",
 			headers: make(map[string]string), // just in case to avoid panics
+			handler: AsyncRequest(10*time.Millisecond, 20*time.Millisecond, 30*time.Millisecond)(
+				handleResponse(handlerAsync),
+			),
 			requests: []request{
 				{
-					title: "sync request should fail with timeout error if handler does not have enough time to complete the task",
-					handler: AsyncRequest(10*time.Millisecond, 20*time.Millisecond, 30*time.Millisecond)(
-						handleResponse(handlerAsync),
-					),
-					code: http.StatusRequestTimeout,
-					data: "context deadline exceeded\n",
-				},
-				{
-					title: "sync request should be successful if handler has enough time to complete the task",
-					handler: AsyncRequest(200*time.Millisecond, 300*time.Millisecond, 500*time.Millisecond)(
-						handleResponse(handlerAsync),
-					),
-					code: http.StatusOK,
-					data: "[0,1,2,3,4,5,6,7,8,9]\n",
+					title: "should fail with timeout error if handler does not have enough time to complete the task",
+					code:  http.StatusRequestTimeout,
+					data:  "context deadline exceeded\n",
 				},
 			},
 		},
 		{
-			title: "async middleware with asynchronous calls",
+			title:   "async middleware with synchronous request",
+			headers: make(map[string]string), // just in case to avoid panics
+			handler: AsyncRequest(200*time.Millisecond, 300*time.Millisecond, 500*time.Millisecond)(
+				handleResponse(handlerAsync),
+			),
+			requests: []request{
+				{
+					title: "should be successful if handler has enough time to complete the task",
+					code:  http.StatusOK,
+					data:  "[0,1,2,3,4,5,6,7,8,9]\n",
+				},
+			},
+		},
+		{
+			title: "async middleware with asynchronous request",
 			headers: map[string]string{
 				asyncHeader: "",
 			},
+			handler: AsyncRequest(50*time.Millisecond, 300*time.Millisecond, 500*time.Millisecond)(
+				handleResponse(handlerAsync),
+			),
 			requests: []request{
 				{
-					title: "async request should be successful if handler has enough time to complete the task",
-					handler: AsyncRequest(200*time.Millisecond, 300*time.Millisecond, 500*time.Millisecond)(
-						handleResponse(handlerAsync),
-					),
-					code: http.StatusOK,
-					data: "[0,1,2,3,4,5,6,7,8,9]\n",
-				},
-				{
-					title: "async request should produce response with request ID if handler did not have enough time to complete the task",
-					handler: AsyncRequest(50*time.Millisecond, 200*time.Millisecond, 300*time.Millisecond)(
-						handleResponse(handlerAsync),
-					),
+					title: "should produce response with request ID if handler did not have enough time to complete the task",
 					hasID: true,
 					code:  http.StatusAccepted,
 					data:  "request is in progress\n",
 				},
 				{
-					title: "middleware should provide status of the current job if async request is still in progress",
-					handler: AsyncRequest(50*time.Millisecond, 200*time.Millisecond, 300*time.Millisecond)(
-						handleResponse(handlerAsync),
-					),
-					timeout:  20 * time.Millisecond,
-					queueLen: 1,
-					hasID:    true,
-					code:     http.StatusAccepted,
-					data:     "request is in progress\n",
+					title:   "should provide status of the current job if async request is still in progress",
+					timeout: 20 * time.Millisecond,
+					hasID:   true,
+					code:    http.StatusAccepted,
+					data:    "request is in progress\n",
 				},
 				{
-					title: "middleware should store the result after task is completed and be able to return it (in cooperation with hanlder)",
-					handler: AsyncRequest(50*time.Millisecond, 200*time.Millisecond, 300*time.Millisecond)(
-						handleResponse(handlerAsync),
-					),
-					timeout:  50 * time.Millisecond,
-					queueLen: 1,
-					code:     http.StatusOK,
-					data:     "[0,1,2,3,4,5,6,7,8,9]\n",
+					title:   "should store the result after task is completed and be able to return it (in cooperation with hanlder)",
+					timeout: 50 * time.Millisecond,
+					code:    http.StatusOK,
+					data:    "[0,1,2,3,4,5,6,7,8,9]\n",
 				},
 				{
-					title: "result should be provided only once and deleted from the cache",
-					handler: AsyncRequest(50*time.Millisecond, 200*time.Millisecond, 300*time.Millisecond)(
-						handleResponse(handlerAsync),
-					),
-					code: http.StatusBadRequest,
-					data: "invalid or expired request\n",
+					title: "should provided the result only once and delete after that",
+					code:  http.StatusBadRequest,
+					data:  "invalid or expired request\n",
+				},
+			},
+		},
+		{
+			title: "async middleware with asynchronous request",
+			headers: map[string]string{
+				asyncHeader: "",
+			},
+			handler: AsyncRequest(200*time.Millisecond, 300*time.Millisecond, 500*time.Millisecond)(
+				handleResponse(handlerAsync),
+			),
+			requests: []request{
+				{
+					title: "should be successful if handler has enough time to complete the task",
+					code:  http.StatusOK,
+					data:  "[0,1,2,3,4,5,6,7,8,9]\n",
+				},
+			},
+		},
+		{
+			title: "async middleware with asynchronous request",
+			headers: map[string]string{
+				asyncHeader: "",
+			},
+			handler: AsyncRequest(50*time.Millisecond, 199*time.Millisecond, 200*time.Millisecond)(
+				handleResponse(handlerAsync),
+			),
+			requests: []request{
+				{
+					title: "should produce response with request ID if handler did not have enough time to complete the task",
+					hasID: true,
+					code:  http.StatusAccepted,
+					data:  "request is in progress\n",
+				},
+				{
+					title:   "should be deleted (as expired) after keep result timeout",
+					timeout: 300 * time.Millisecond,
+					code:    http.StatusBadRequest,
+					data:    "invalid or expired request\n",
 				},
 			},
 		},
@@ -206,9 +231,6 @@ func Test_AsyncRequest(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.title, func(t *testing.T) {
 			for _, req := range tc.requests {
-				if total := len(asyncJobs); total != req.queueLen {
-					t.Errorf("async middleware is expected to have %d processing tasks, but has %d", req.queueLen, total)
-				}
 				t.Run(req.title, func(t *testing.T) {
 					// sleep before request
 					time.Sleep(req.timeout)
@@ -218,7 +240,7 @@ func Test_AsyncRequest(t *testing.T) {
 					for key, value := range tc.headers {
 						r.Header.Set(key, value)
 					}
-					req.handler.ServeHTTP(w, r)
+					tc.handler.ServeHTTP(w, r)
 					// compare status code
 					if w.Code != req.code {
 						t.Errorf("status code %d is expected to be %d", w.Code, req.code)
@@ -234,7 +256,7 @@ func Test_AsyncRequest(t *testing.T) {
 						}
 						tc.headers[asyncRequestID] = id
 					} else if req.hasID {
-						t.Error("the response shoul contain request id")
+						t.Error("the response should contain request id")
 					}
 				})
 			}
