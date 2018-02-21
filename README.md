@@ -1,6 +1,7 @@
 # go-middleware
 
 [![GoDoc][godoc-badge]][godoc-link]
+[![License][license-badge]][license-link]
 [![Build Status][circleci-badge]][circleci-link]
 [![Report Card][report-badge]][report-link]
 [![GoCover][cover-badge]][cover-link]
@@ -84,6 +85,8 @@ It means that work is still in progress, a lot of things can be changed or even 
 
 [godoc-badge]: https://godoc.org/github.com/Alma-media/go-middleware?status.svg
 [godoc-link]: https://godoc.org/github.com/Alma-media/go-middleware
+[license-badge]: https://img.shields.io/:license-MIT-green.svg
+[license-link]: https://opensource.org/licenses/MIT
 [circleci-badge]: https://circleci.com/gh/Alma-media/go-middleware.svg?style=shield
 [circleci-link]: https://circleci.com/gh/Alma-media/go-middleware
 [report-badge]: https://goreportcard.com/badge/github.com/Alma-media/go-middleware
