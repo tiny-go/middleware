@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"net/http"
+	"sync"
 	"time"
 
 	timap "github.com/Alma-media/go-timap"
@@ -55,6 +56,7 @@ type HandlerTask interface {
 
 // base task for sync/async jobs.
 type task struct {
+	sync.Mutex
 	status       JobStatus
 	started      time.Time
 	finished     time.Time
@@ -66,11 +68,15 @@ type task struct {
 
 // Status returns status of the current task.
 func (t *task) Status() JobStatus {
+	t.Lock()
+	defer t.Unlock()
 	return t.status
 }
 
 // Resolve returns the result of handler execution and an error.
 func (t *task) Resolve() (interface{}, error) {
+	t.Lock()
+	defer t.Unlock()
 	if t.status != StatusDone {
 		return nil, ErrNotCompleted
 	}
@@ -79,6 +85,8 @@ func (t *task) Resolve() (interface{}, error) {
 
 // Complete the task with some result and error, change status to "done".
 func (t *task) Complete(data interface{}, err error) error {
+	t.Lock()
+	defer t.Unlock()
 	switch t.status {
 	case StatusWaiting:
 		return ErrNotStarted
@@ -104,7 +112,9 @@ func newSyncTask(reqTimeout time.Duration) *syncTask {
 // able to pass arguments to it or call Complete() in order to return some value).
 func (st *syncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) error) {
 	// memorize start time and change job status
+	st.Lock()
 	st.status, st.started = StatusInProgress, time.Now()
+	st.Unlock()
 	// error chan
 	errChan := make(chan error, 1)
 	// call handler in goroutine
@@ -142,7 +152,9 @@ func newAsyncTask(execTimeout time.Duration) *asyncTask {
 // Do handles asynchronous execution of the handler.
 func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) error) {
 	// memorize start time and change job status
+	at.Lock()
 	at.status, at.started = StatusInProgress, time.Now()
+	at.Unlock()
 	// error chan
 	errChan := make(chan error, 1)
 	// call handler in goroutine
@@ -221,7 +233,7 @@ func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware
 				currJob = async
 				// check async on exit and remove if it's done
 				defer func() {
-					if async.status == StatusDone {
+					if async.Status() == StatusDone {
 						asyncJobs.Delete(async.ID)
 					} else {
 						// return request ID
