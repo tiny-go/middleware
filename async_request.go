@@ -189,12 +189,19 @@ func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) 
 	return
 }
 
-// AsyncRequest middleware provides a mechanism to request the data again after timeout.
-// 	reqTimeout - time allotted for processing HTTP request, if request has not been
+// AsyncRequest func creates a middleware that provides a mechanism to run the
+// handler in a background (if HTTP request timeout was reached) and keep result
+// until it is demanded again or result expires. Function parameters:
+//
+// reqTimeout - time allotted for processing HTTP request, if request has not been
 // processed completely - returns an ID of request (to retrieve result later).
-// 	asyncTimeout - maximum time for async job to be done (actual context deadline),
+//
+// asyncTimeout - maximum time for async job to be done (actual context deadline),
 // this logic should be implemented in asynchronous handler or skipped - in that case
 // handler cannot be interrupted.
+//
+// keepResult - at the expiration of a given period of time the result will be
+// unavailable (deleted).
 func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware {
 	// no sense to use this middleware if the following condition is not satisfied
 	if !(reqTimeout < asyncTimeout && asyncTimeout < keepResult) {
