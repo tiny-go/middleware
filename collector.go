@@ -9,7 +9,8 @@ type Collector interface {
 	Middleware(method string) []Middleware
 }
 
-// List provides ability to register/unregister middleware for HTTP methods.
+// List provides ability to register/unregister middleware for HTTP methods. This
+// is a basic Collector interface implementation.
 type List struct {
 	middleware map[string][]Middleware
 }
