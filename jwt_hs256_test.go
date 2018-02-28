@@ -10,11 +10,6 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
-const (
-	tokWrongIssuer = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJXcm9uZyIsImV4cCI6OTUwNzgwOTg3MiwiaXNzIjoiV3JvbmcifQ.fGVjxmejYo6J29fjGOXOFoh1r2k9oV0yfOOdBsYdacQ"
-	tokValid       = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJBcHBJRCIsImV4cCI6OTUwNzgwOTg3MiwiaXNzIjoiQXBwSUQifQ.d-HgNTLWnKYhio9PkDp_tBt3oybFseNdirPaJgLudEw"
-)
-
 type invalidClaims struct{}
 
 func (ic invalidClaims) Valid() error { return errors.New("error") }
@@ -64,13 +59,14 @@ func Test_JwtHS256(t *testing.T) {
 			body: "token is expired by",
 		},
 		{
-			title:   "HTTP request with immortal token should end with success",
+			title:   "HTTP request with invalid signing method should produce an error",
 			secret:  "secret",
 			closure: func() jwt.Claims { return new(jwt.StandardClaims) },
 			headers: map[string]string{
-				jwtAuthKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.t-IDcSemACt8x4iTMCda8Yhe3iZaWbvV5XKSTbuAn0M",
+				jwtAuthKey: "eyJhbGciOiJ3cm9uZyIsInR5cCI6IkpXVCJ9.e30.ojMtefjRPf4M8NyHVOlR4fWq1TYkr8-2BUSKEddS45Y",
 			},
-			code: http.StatusOK,
+			code: http.StatusForbidden,
+			body: "signing method (alg) is unavailable.\n",
 		},
 		{
 			title:   "token with invalid signature should return an error",
@@ -80,6 +76,15 @@ func Test_JwtHS256(t *testing.T) {
 			},
 			code: http.StatusForbidden,
 			body: "signature is invalid\n",
+		},
+		{
+			title:   "HTTP request with immortal token should end with success",
+			secret:  "secret",
+			closure: func() jwt.Claims { return new(jwt.StandardClaims) },
+			headers: map[string]string{
+				jwtAuthKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.t-IDcSemACt8x4iTMCda8Yhe3iZaWbvV5XKSTbuAn0M",
+			},
+			code: http.StatusOK,
 		},
 	}
 

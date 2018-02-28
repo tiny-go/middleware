@@ -15,7 +15,7 @@ const (
 	jwtAuthKey = "Authorization"
 )
 
-// JwtHS256 is a JSON Web token middleware.
+// JwtHS256 is a JSON Web token middleware using HMAC signing method.
 func JwtHS256(secret string, cf func() jwt.Claims) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +36,11 @@ func JwtHS256(secret string, cf func() jwt.Claims) Middleware {
 			// cannot parse the token
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
+			// token validation error
+			if !token.Valid {
+				http.Error(w, "token is invalid", http.StatusForbidden)
 				return
 			}
 			// add claims to the context and call next
