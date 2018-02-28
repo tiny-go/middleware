@@ -19,7 +19,7 @@ type invalidClaims struct{}
 
 func (ic invalidClaims) Valid() error { return errors.New("error") }
 
-func Test_JwtHmac(t *testing.T) {
+func Test_JwtHS256(t *testing.T) {
 	type testCase struct {
 		title   string
 		secret  string
@@ -101,22 +101,5 @@ func Test_JwtHmac(t *testing.T) {
 				}
 			})
 		}
-
-		// Convey("get token from URL values", func() {
-		// 	r, _ := http.NewRequest("", "/?"+AuthKey+"="+tokValid, nil)
-		// 	w := httptest.NewRecorder()
-		// 	handler(w, r, nil)
-		// 	So(w.Code, ShouldEqual, http.StatusOK)
-		// 	So(w.Body.String(), ShouldEqual, "")
-		// })
-		// Convey("get token from request form", func() {
-		// 	r, _ := http.NewRequest("", "", nil)
-		// 	r.PostForm = url.Values{}
-		// 	r.PostForm.Add(AuthKey, tokValid)
-		// 	w := httptest.NewRecorder()
-		// 	handler(w, r, nil)
-		// 	So(w.Code, ShouldEqual, http.StatusOK)
-		// 	So(w.Body.String(), ShouldEqual, "")
-		// })
 	})
 }
