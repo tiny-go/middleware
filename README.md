@@ -19,6 +19,7 @@ $ go get github.com/Alma-media/go-middleware
 - `ContextDeadline` - sets request timeout (demands additional logic in your app)
 - `PanicRecover` - catches the panics inside our chain
 - `SetHeaders` - provides an easy way to set response headers
+- `JwtHS256` - verifies JWT (JSON Web Token) signed with HMAC signing method and parses its body to the provided reciever that is going to be available to next handlers through the request context
 
 ### Experimental middleware
 It means that work is still in progress, a lot of things can be changed or even completely removed
