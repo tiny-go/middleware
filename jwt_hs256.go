@@ -82,7 +82,7 @@ func Bearer(r *http.Request) (string, bool) {
 }
 
 // GetClaimsFromContext returns claims from context.
-func GetClaimsFromContext(ctx context.Context) jwt.Claims {
-	claims, _ := ctx.Value(claimsKey).(jwt.Claims)
+func GetClaimsFromContext(ctx context.Context) Claims {
+	claims, _ := ctx.Value(claimsKey).(Claims)
 	return claims
 }
