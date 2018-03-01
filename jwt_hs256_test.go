@@ -65,12 +65,13 @@ func Test_Bearer(t *testing.T) {
 
 func Test_JwtHS256(t *testing.T) {
 	type testCase struct {
-		title   string
-		secret  string
-		closure func() Claims
-		headers map[string]string
-		code    int
-		body    string
+		title     string
+		secret    string
+		closure   func() Claims
+		headers   map[string]string
+		code      int
+		body      string
+		hasClaims bool
 	}
 
 	cases := []testCase{
@@ -133,14 +134,23 @@ func Test_JwtHS256(t *testing.T) {
 			headers: map[string]string{
 				jwtAuthKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.t-IDcSemACt8x4iTMCda8Yhe3iZaWbvV5XKSTbuAn0M",
 			},
-			code: http.StatusOK,
+			code:      http.StatusOK,
+			hasClaims: true,
 		},
 	}
 
 	t.Run("Given middleware which should parse JWT token signed with HMAC method", func(t *testing.T) {
 		for _, tc := range cases {
 			t.Run(tc.title, func(t *testing.T) {
-				handler := Chain(JwtHS256(tc.secret, tc.closure), blobHandler)
+				handler := Chain(
+					JwtHS256(tc.secret, tc.closure),
+					func(w http.ResponseWriter, r *http.Request) {
+						claims := GetClaimsFromContext(r.Context())
+						if claims == nil && tc.hasClaims {
+							t.Error("context was expected to contain claims but did not contain them")
+						}
+					},
+				)
 				r, _ := http.NewRequest("", "", nil)
 				w := httptest.NewRecorder()
 				for hKey, hVal := range tc.headers {
@@ -151,7 +161,7 @@ func Test_JwtHS256(t *testing.T) {
 					t.Errorf("response status code %d was expected to be %d", w.Code, tc.code)
 				}
 				if !strings.Contains(w.Body.String(), tc.body) {
-					t.Errorf("the response body %q was expected to contain substring %q, but didn't", w.Body.String(), tc.body)
+					t.Errorf("the response body %q was expected to contain substring %q, but did not contain it", w.Body.String(), tc.body)
 				}
 			})
 		}

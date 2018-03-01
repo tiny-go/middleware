@@ -15,13 +15,14 @@ const (
 	jwtAuthKey = "Authorization"
 )
 
-// Claims is a vrapper over jwt.Claims to avoid import of jwt-go using JwtHS256 middleware.
+// Claims is a wrapper over jwt.Claims to avoid import of jwt-go to the final
+// application when using JwtHS256 middleware.
 type Claims interface {
 	jwt.Claims
 }
 
 // JwtHS256 is a JSON Web token middleware using HMAC signing method that parses
-// JWT to provided Claims reciever and puts it to the request context.
+// token to the provided Claims reciever and puts it to the request context.
 func JwtHS256(secret string, cf func() Claims) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -49,13 +50,13 @@ func JwtHS256(secret string, cf func() Claims) Middleware {
 				http.Error(w, "token is invalid", http.StatusForbidden)
 				return
 			}
-			// add claims to the context and call next
+			// add claims to the context and call the next
 			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), claimsKey, token.Claims)))
 		})
 	}
 }
 
-// Bearer gets the bearer out of given request.
+// Bearer gets the bearer out of a given request object.
 func Bearer(r *http.Request) (string, bool) {
 	var bearer string
 	// get bearer from the request headers
