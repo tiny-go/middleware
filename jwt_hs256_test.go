@@ -67,7 +67,7 @@ func Test_JwtHS256(t *testing.T) {
 	type testCase struct {
 		title   string
 		secret  string
-		closure func() jwt.Claims
+		closure func() Claims
 		headers map[string]string
 		code    int
 		body    string
@@ -76,13 +76,13 @@ func Test_JwtHS256(t *testing.T) {
 	cases := []testCase{
 		{
 			title:   "HTTP request without JWT should return an error",
-			closure: func() jwt.Claims { return new(jwt.StandardClaims) },
+			closure: func() Claims { return new(jwt.StandardClaims) },
 			code:    http.StatusUnauthorized,
 			body:    "no JSON web token in request\n",
 		},
 		{
 			title:   "HTTP request conaining JWT with wrong number of segments should return an error",
-			closure: func() jwt.Claims { return new(jwt.StandardClaims) },
+			closure: func() Claims { return new(jwt.StandardClaims) },
 			headers: map[string]string{jwtAuthKey: "invalid token"},
 			code:    http.StatusForbidden,
 			body:    "token contains an invalid number of segments\n",
@@ -90,7 +90,7 @@ func Test_JwtHS256(t *testing.T) {
 		{
 			title:   "claims validation failure should produce an error",
 			secret:  "secret",
-			closure: func() jwt.Claims { return new(invalidClaims) },
+			closure: func() Claims { return new(invalidClaims) },
 			headers: map[string]string{
 				jwtAuthKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.t-IDcSemACt8x4iTMCda8Yhe3iZaWbvV5XKSTbuAn0M",
 			},
@@ -100,7 +100,7 @@ func Test_JwtHS256(t *testing.T) {
 		{
 			title:   "HTTP request with expired token should return an error",
 			secret:  "secret",
-			closure: func() jwt.Claims { return new(jwt.StandardClaims) },
+			closure: func() Claims { return new(jwt.StandardClaims) },
 			headers: map[string]string{
 				jwtAuthKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjF9.8onrqJhmsoas7S-2eOXSmQe1UZfbsK0zZyIw7ik8gZE",
 			},
@@ -110,7 +110,7 @@ func Test_JwtHS256(t *testing.T) {
 		{
 			title:   "HTTP request with invalid signing method should produce an error",
 			secret:  "secret",
-			closure: func() jwt.Claims { return new(jwt.StandardClaims) },
+			closure: func() Claims { return new(jwt.StandardClaims) },
 			headers: map[string]string{
 				jwtAuthKey: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.e30.b-gLBOyB62jzeiETcpDg4wgLa9EcJcEN5Dh4Hna5Uvs6wqGWRco1uIxdsQJRTvsWPq63A_ZM9g7rjs-SEORyty1DqWNeqaK3uaECr5n80dL_oKcWUhzCDJbC2W_v4_2jQz4lz5m12FH-_N19RRymA_GeKuZMyvH0MUlitVfnjlA",
 			},
@@ -119,7 +119,7 @@ func Test_JwtHS256(t *testing.T) {
 		},
 		{
 			title:   "token with invalid signature should return an error",
-			closure: func() jwt.Claims { return new(jwt.StandardClaims) },
+			closure: func() Claims { return new(jwt.StandardClaims) },
 			headers: map[string]string{
 				jwtAuthKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.t-IDcSemACt8x4iTMCda8Yhe3iZaWbvV5XKSTbuAn0M",
 			},
@@ -129,7 +129,7 @@ func Test_JwtHS256(t *testing.T) {
 		{
 			title:   "HTTP request with immortal token should end with success",
 			secret:  "secret",
-			closure: func() jwt.Claims { return new(jwt.StandardClaims) },
+			closure: func() Claims { return new(jwt.StandardClaims) },
 			headers: map[string]string{
 				jwtAuthKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.t-IDcSemACt8x4iTMCda8Yhe3iZaWbvV5XKSTbuAn0M",
 			},
