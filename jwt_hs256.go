@@ -15,13 +15,13 @@ const (
 	jwtAuthKey = "Authorization"
 )
 
-// Claims is a vrapper over jwt.Claims to avoid import of jwt-go using JwtHS256
-// middleware.
+// Claims is a vrapper over jwt.Claims to avoid import of jwt-go using JwtHS256 middleware.
 type Claims interface {
 	jwt.Claims
 }
 
-// JwtHS256 is a JSON Web token middleware using HMAC signing method.
+// JwtHS256 is a JSON Web token middleware using HMAC signing method that parses
+// JWT to provided Claims reciever and puts it to the request context.
 func JwtHS256(secret string, cf func() Claims) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
