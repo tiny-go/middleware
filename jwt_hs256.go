@@ -22,7 +22,7 @@ type Claims interface {
 }
 
 // JwtHS256 is a JSON Web token middleware using HMAC signing method that parses
-// token to the provided Claims reciever and puts it to the request context.
+// token to the provided Claims receiver and puts it to the request context.
 func JwtHS256(secret string, cf func() Claims) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
