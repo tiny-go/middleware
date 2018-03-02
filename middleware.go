@@ -3,7 +3,12 @@ package mw
 import (
 	"fmt"
 	"net/http"
+	"time"
 )
+
+// DefaultTimeFormat contains default date/time layout to be used across middlewares
+// of the package.
+var DefaultTimeFormat = time.RFC1123
 
 // contextKey is a type which is used internally by the package to have its own
 // key (types) that never collide.

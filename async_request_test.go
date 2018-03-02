@@ -109,11 +109,12 @@ func Test_AsyncRequest_input_arguments(t *testing.T) {
 
 func Test_AsyncRequest(t *testing.T) {
 	type request struct {
-		title   string
-		timeout time.Duration
-		hasID   bool
-		code    int
-		data    string
+		title      string
+		timeout    time.Duration
+		timestamps bool
+		hasID      bool
+		code       int
+		data       string
 	}
 
 	type testCase struct {
@@ -162,17 +163,19 @@ func Test_AsyncRequest(t *testing.T) {
 			),
 			requests: []request{
 				{
-					title: "should produce response with request ID if handler did not have enough time to complete the task",
-					hasID: true,
-					code:  http.StatusAccepted,
-					data:  "request is in progress\n",
+					title:      "should produce response with request ID if handler did not have enough time to complete the task",
+					hasID:      true,
+					timestamps: true,
+					code:       http.StatusAccepted,
+					data:       "request is in progress\n",
 				},
 				{
-					title:   "should provide status of the current job if async request is still in progress",
-					timeout: 20 * time.Millisecond,
-					hasID:   true,
-					code:    http.StatusAccepted,
-					data:    "request is in progress\n",
+					title:      "should provide status of the current job if async request is still in progress",
+					timeout:    20 * time.Millisecond,
+					hasID:      true,
+					timestamps: true,
+					code:       http.StatusAccepted,
+					data:       "request is in progress\n",
 				},
 				{
 					title:   "should store the result after task is completed and be able to return it (in cooperation with handler)",
@@ -257,6 +260,15 @@ func Test_AsyncRequest(t *testing.T) {
 						tc.headers[asyncRequestID] = id
 					} else if req.hasID {
 						t.Error("the response should contain request id")
+					}
+					if req.timestamps {
+						started, keepUntil := w.Header().Get(asyncRequestAccepted), w.Header().Get(asyncRequestKeepUntil)
+						if _, err := time.Parse(DefaultTimeFormat, started); err != nil {
+							t.Errorf("should contain %q header and have valid format %q", asyncRequestAccepted, DefaultTimeFormat)
+						}
+						if _, err := time.Parse(DefaultTimeFormat, keepUntil); err != nil {
+							t.Errorf("should contain %q header and have valid format %q", asyncRequestKeepUntil, DefaultTimeFormat)
+						}
 					}
 				})
 			}
