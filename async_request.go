@@ -25,9 +25,11 @@ const (
 type JobStatus int
 
 const (
-	asyncHeader                = "Async-Request"
-	asyncRequestID             = "Async-Request-ID"
-	asyncContextKey contextKey = "async-request"
+	asyncHeader                      = "Async-Request"
+	asyncRequestID                   = "Async-Request-ID"
+	asyncRequestAccepted             = "Async-Request-Started-At"
+	asyncRequestKeepUntil            = "Async-Request-Keep-Until"
+	asyncContextKey       contextKey = "async-request"
 )
 
 var (
@@ -245,6 +247,8 @@ func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware
 					} else {
 						// return request ID
 						w.Header().Set(asyncRequestID, async.ID)
+						w.Header().Set(asyncRequestAccepted, async.started.Format(DefaultTimeFormat))
+						w.Header().Set(asyncRequestKeepUntil, async.started.Add(keepResult).Format(DefaultTimeFormat))
 						// the status ot request is "accepted"
 						w.WriteHeader(http.StatusAccepted)
 						// provide a basic info message to the client
