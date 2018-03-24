@@ -51,9 +51,7 @@ func (mw Middleware) Use(middlewares ...Middleware) Middleware {
 
 // Then injects handler into middleware chain.
 func (mw Middleware) Then(final http.Handler) http.Handler {
-	return mw(func(handler http.Handler) http.Handler {
-		return handler
-	}(final))
+	return mw(final)
 }
 
 // blobHandler will be called anyway (if request reached your final handler),
