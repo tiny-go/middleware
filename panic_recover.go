@@ -12,8 +12,8 @@ import (
 func PanicHandler(w http.ResponseWriter, p interface{}) {
 	switch e := p.(type) {
 	case nil:
-		// ignore (panics that throw nil can be used to indicate that handler finished
-		// the task successfully and all the next handlers can be igored)
+		// panics that throw nil can be used to indicate that handler successfully
+		// completed the task and all of the next handlers will be ignored
 	case Error:
 		// retrieve status code and error message
 		http.Error(w, e.Error(), e.Code())
