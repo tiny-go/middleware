@@ -53,7 +53,7 @@ It means that work is still in progress, a lot of things can be changed or even 
     	http.Handle(
     		"/",
     		mw.
-          // with HTTP panic handler
+    			// with HTTP panic handler
     			New(mw.PanicRecover(mw.PanicHandler)).
     			Use(mw.BodyClose).
     			Then(panicHandler),
