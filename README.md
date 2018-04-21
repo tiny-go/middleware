@@ -77,7 +77,11 @@ It means that work is still in progress, a lot of things can be changed or even 
     		"/",
     		mw.Chain(
     			// with custom panic handler
-    			mw.PanicRecover(func(_ http.ResponseWriter, p interface{}) { log.Println(p) }),
+    			mw.PanicRecover(func(_ http.ResponseWriter, r interface{}) {
+    				if r != nil {
+    					log.Println(r)
+    				}
+    			}),
     			mw.BodyClose,
     			panicHandler,
     		),
