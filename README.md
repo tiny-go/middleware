@@ -53,7 +53,8 @@ It means that work is still in progress, a lot of things can be changed or even 
     	http.Handle(
     		"/",
     		mw.
-    			New(mw.PanicRecover(log.New(os.Stdout, "", 0))).
+          // with HTTP panic handler
+    			New(mw.PanicRecover(mw.PanicHandler)).
     			Use(mw.BodyClose).
     			Then(panicHandler),
     	)
@@ -75,7 +76,8 @@ It means that work is still in progress, a lot of things can be changed or even 
     	http.Handle(
     		"/",
     		mw.Chain(
-    			mw.PanicRecover(log.New(os.Stdout, "", 0)),
+          // with custom panic handler
+          mw.PanicRecover(func(_ http.ResponseWriter, p interface{}) { log.Println(p) }),
     			mw.BodyClose,
     			panicHandler,
     		),
