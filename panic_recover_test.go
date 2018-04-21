@@ -11,28 +11,33 @@ func Test_PanicRecover(t *testing.T) {
 	type testCase struct {
 		title       string
 		nextHandler http.Handler
-		logOutput   string
-		netStatus   int
-		netOutput   string
+		status      int
+		output      string
 	}
 
 	cases := []testCase{
 		{
-			title: "catch \"unknown\" panic and report to the log",
+			title: "ignore \"nil\" panic and send a success code",
+			nextHandler: http.HandlerFunc(
+				func(w http.ResponseWriter, r *http.Request) { panic(nil) },
+			),
+			status: http.StatusOK,
+		},
+		{
+			title: "catch \"unknown\" panic and report to the client with code 500",
 			nextHandler: http.HandlerFunc(
 				func(w http.ResponseWriter, r *http.Request) { panic("unexpected panic") },
 			),
-			netStatus: http.StatusInternalServerError,
-			logOutput: "Recovered from panic:it should panic",
-			netOutput: "unexpected panic\n",
+			status: http.StatusInternalServerError,
+			output: "unexpected panic\n",
 		},
 		{
 			title: "catch a \"standard error\" and report to the client with code 500",
 			nextHandler: http.HandlerFunc(
 				func(w http.ResponseWriter, r *http.Request) { panic(errors.New("standard error")) },
 			),
-			netStatus: http.StatusInternalServerError,
-			netOutput: "standard error\n",
+			status: http.StatusInternalServerError,
+			output: "standard error\n",
 		},
 		{
 			title: "catch an \"error with status code\" and report to the client",
@@ -41,8 +46,8 @@ func Test_PanicRecover(t *testing.T) {
 					panic(NewStatusError(http.StatusBadRequest, errors.New("bad request")))
 				},
 			),
-			netStatus: http.StatusBadRequest,
-			netOutput: "bad request\n",
+			status: http.StatusBadRequest,
+			output: "bad request\n",
 		},
 	}
 
@@ -55,11 +60,11 @@ func Test_PanicRecover(t *testing.T) {
 			}()
 			w := httptest.NewRecorder()
 			PanicRecover(PanicHandler)(tc.nextHandler).ServeHTTP(w, nil)
-			if w.Code != tc.netStatus {
-				t.Errorf("status code %d was expected to be %d", w.Code, tc.netStatus)
+			if w.Code != tc.status {
+				t.Errorf("status code %d was expected to be %d", w.Code, tc.status)
 			}
-			if w.Body.String() != tc.netOutput {
-				t.Errorf("net output %q was expected to be %q", w.Body.String(), tc.netOutput)
+			if w.Body.String() != tc.output {
+				t.Errorf("net output %q was expected to be %q", w.Body.String(), tc.output)
 			}
 		})
 	}
