@@ -1,6 +1,6 @@
 package mw
 
-// Error interface describes errors that can contain HTTP status code.
+// Error interface describes errors that contain HTTP status code.
 type Error interface {
 	error
 	Code() int
@@ -17,7 +17,7 @@ func NewStatusError(code int, cause error) StatusError {
 	return StatusError{error: cause, code: code}
 }
 
-// Code return HTTP status code to satisfy Error interface.
+// Code returns HTTP status code (to satisfy Error interface).
 func (e StatusError) Code() int {
 	return e.code
 }

@@ -53,9 +53,8 @@ func Test_PanicRecover(t *testing.T) {
 					t.Error("the code should never panic because it is wrapped with PanicRecover middleware")
 				}
 			}()
-			handler := PanicRecover(PanicHandler)(tc.nextHandler)
 			w := httptest.NewRecorder()
-			handler.ServeHTTP(w, nil)
+			PanicRecover(PanicHandler)(tc.nextHandler).ServeHTTP(w, nil)
 			if w.Code != tc.netStatus {
 				t.Errorf("status code %d was expected to be %d", w.Code, tc.netStatus)
 			}

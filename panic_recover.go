@@ -5,9 +5,10 @@ import (
 	"net/http"
 )
 
-// PanicHandler reports the error (panic). Panic can be reported to the client as
-// an HTTP error if handler is able to obtain status code or at least the error
-// message, otherwice it tries to convert a panic to a string.
+// PanicHandler reports the error (panic) to the client as an HTTP error. If HTTP
+// error status code can be retrieved PanicHandler sends provided code to the client
+// instead of default (500). If provided panic (value) does not implement any of
+// supported interfaces (error/Error) - it tries to convert a panic to a string.
 func PanicHandler(w http.ResponseWriter, p interface{}) {
 	switch e := p.(type) {
 	case Error:
