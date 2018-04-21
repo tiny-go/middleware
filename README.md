@@ -76,8 +76,8 @@ It means that work is still in progress, a lot of things can be changed or even 
     	http.Handle(
     		"/",
     		mw.Chain(
-          // with custom panic handler
-          mw.PanicRecover(func(_ http.ResponseWriter, p interface{}) { log.Println(p) }),
+    			// with custom panic handler
+    			mw.PanicRecover(func(_ http.ResponseWriter, p interface{}) { log.Println(p) }),
     			mw.BodyClose,
     			panicHandler,
     		),
