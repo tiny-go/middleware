@@ -1,7 +1,6 @@
 package mw
 
 import (
-	"errors"
 	"net/http"
 	"testing"
 )
@@ -9,7 +8,7 @@ import (
 var _ Error = StatusError{}
 
 func TestStatusError(t *testing.T) {
-	err := NewStatusError(http.StatusNotFound, errors.New("not found"))
+	err := NewStatusError(http.StatusNotFound, "not found")
 	t.Run("test if StatusError returns expected error code", func(t *testing.T) {
 		if err.Code() != http.StatusNotFound {
 			t.Errorf("error code %d was expected to be %d", err.Code(), http.StatusNotFound)
