@@ -8,12 +8,11 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
-const (
-	// claimsKey represents claims context key.
-	claimsKey contextKey = "request-claims"
-	// jwtAuthKey is an authorization key param.
-	jwtAuthKey = "Authorization"
-)
+// jwtAuthKey is an authorization key param.
+const jwtAuthKey = "Authorization"
+
+// claimsKey represents claims context key that never collides.
+type claimsKey struct{}
 
 // Claims is a wrapper over jwt.Claims to avoid import of jwt-go to the final
 // application when using JwtHS256 middleware.
@@ -51,7 +50,7 @@ func JwtHS256(secret string, cf func() Claims) Middleware {
 				return
 			}
 			// add claims to the context and call the next
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), claimsKey, token.Claims)))
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), claimsKey{}, token.Claims)))
 		})
 	}
 }
@@ -84,6 +83,6 @@ func Bearer(r *http.Request) (string, bool) {
 
 // GetClaimsFromContext returns claims from context.
 func GetClaimsFromContext(ctx context.Context) Claims {
-	claims, _ := ctx.Value(claimsKey).(Claims)
+	claims, _ := ctx.Value(claimsKey{}).(Claims)
 	return claims
 }
