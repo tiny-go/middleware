@@ -21,15 +21,18 @@ const (
 	StatusDone
 )
 
+// asyncKey is the unique private key which is used (internally) to store/retrieve
+// async task from the request context.
+type asyncKey struct{}
+
 // JobStatus represents the status of asynchronous task.
 type JobStatus int
 
 const (
-	asyncHeader                      = "Async-Request"
-	asyncRequestID                   = "Async-Request-ID"
-	asyncRequestAccepted             = "Async-Request-Started-At"
-	asyncRequestKeepUntil            = "Async-Request-Keep-Until"
-	asyncContextKey       contextKey = "async-request"
+	asyncHeader           = "Async-Request"
+	asyncRequestID        = "Async-Request-ID"
+	asyncRequestAccepted  = "Async-Request-Started-At"
+	asyncRequestKeepUntil = "Async-Request-Keep-Until"
 )
 
 var (
@@ -268,7 +271,7 @@ func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware
 			// get context from request
 			ctx := r.Context()
 			// put async task to the context
-			ctx = context.WithValue(ctx, asyncContextKey, currJob)
+			ctx = context.WithValue(ctx, asyncKey{}, currJob)
 			// replace request
 			r = r.WithContext(ctx)
 			// call next handler
@@ -279,6 +282,6 @@ func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware
 
 // GetHandlerTask extracts current job from context.
 func GetHandlerTask(ctx context.Context) (HandlerTask, bool) {
-	async, ok := ctx.Value(asyncContextKey).(HandlerTask)
+	async, ok := ctx.Value(asyncKey{}).(HandlerTask)
 	return async, ok
 }
