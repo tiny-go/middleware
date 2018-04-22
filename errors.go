@@ -1,5 +1,7 @@
 package mw
 
+import "errors"
+
 // Error interface describes errors that contain HTTP status code.
 type Error interface {
 	error
@@ -13,16 +15,11 @@ type StatusError struct {
 }
 
 // NewStatusError is a constructor func for StatusError.
-func NewStatusError(code int, cause error) StatusError {
-	return StatusError{error: cause, code: code}
+func NewStatusError(code int, cause string) StatusError {
+	return StatusError{error: errors.New(cause), code: code}
 }
 
 // Code returns HTTP status code (to satisfy Error interface).
 func (e StatusError) Code() int {
 	return e.code
-}
-
-// Error returns the actual error message.
-func (e StatusError) Error() string {
-	return e.error.Error()
 }
