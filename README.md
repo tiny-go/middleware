@@ -11,7 +11,7 @@ Golang HTTP middleware
 ### Installation
 Since `go-middleware` is an open source project and repository is public you can simply install it with `go get`:
 ```bash
-$ go get github.com/Alma-media/go-middleware
+$ go get github.com/tiny-go/middleware
 ```
 
 ### Currently available middleware
@@ -40,7 +40,7 @@ It means that work is still in progress, a lot of things can be changed or even 
     	"net/http"
     	"os"
 
-    	"github.com/Alma-media/go-middleware"
+    	"github.com/tiny-go/middleware"
     )
 
     var (
@@ -90,13 +90,13 @@ It means that work is still in progress, a lot of things can be changed or even 
     }
     ```
 
-[godoc-badge]: https://godoc.org/github.com/Alma-media/go-middleware?status.svg
-[godoc-link]: https://godoc.org/github.com/Alma-media/go-middleware
+[godoc-badge]: https://godoc.org/github.com/tiny-go/middleware?status.svg
+[godoc-link]: https://godoc.org/github.com/tiny-go/middleware
 [license-badge]: https://img.shields.io/:license-MIT-green.svg
 [license-link]: https://opensource.org/licenses/MIT
-[circleci-badge]: https://circleci.com/gh/Alma-media/go-middleware.svg?style=shield
-[circleci-link]: https://circleci.com/gh/Alma-media/go-middleware
-[report-badge]: https://goreportcard.com/badge/github.com/Alma-media/go-middleware
-[report-link]: https://goreportcard.com/report/github.com/Alma-media/go-middleware
-[cover-badge]: https://gocover.io/_badge/github.com/Alma-media/go-middleware
-[cover-link]: https://gocover.io/github.com/Alma-media/go-middleware
+[circleci-badge]: https://circleci.com/gh/tiny-go/middleware.svg?style=shield
+[circleci-link]: https://circleci.com/gh/tiny-go/middleware
+[report-badge]: https://goreportcard.com/badge/github.com/tiny-go/middleware
+[report-link]: https://goreportcard.com/report/github.com/tiny-go/middleware
+[cover-badge]: https://gocover.io/_badge/github.com/tiny-go/middleware
+[cover-link]: https://gocover.io/github.com/tiny-go/middleware
