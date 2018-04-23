@@ -51,22 +51,18 @@ func CodecFromList(codecs Codecs) Middleware {
 			var reqCodec, resCodec Codec
 			// get request codec
 			if reqCodec = codecs.Lookup(r.Header.Get(contentTypeHeader)); reqCodec == nil {
-				panic(
-					NewStatusError(
-						http.StatusBadRequest,
-						fmt.Sprintf("unsupported request codec: %q", r.Header.Get(contentTypeHeader)),
-					),
-				)
+				panic(NewStatusError(
+					http.StatusBadRequest,
+					fmt.Sprintf("unsupported request codec: %q", r.Header.Get(contentTypeHeader)),
+				))
 			}
 			r = r.WithContext(context.WithValue(r.Context(), codecKey{"req"}, reqCodec))
 			// get response codec
 			if resCodec = codecs.Lookup(r.Header.Get(acceptHeader)); resCodec == nil {
-				panic(
-					NewStatusError(
-						http.StatusBadRequest,
-						fmt.Sprintf("unsupported response codec: %q", r.Header.Get(acceptHeader)),
-					),
-				)
+				panic(NewStatusError(
+					http.StatusBadRequest,
+					fmt.Sprintf("unsupported response codec: %q", r.Header.Get(acceptHeader)),
+				))
 			}
 			r = r.WithContext(context.WithValue(r.Context(), codecKey{"res"}, resCodec))
 			// call the next handler

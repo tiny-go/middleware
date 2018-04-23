@@ -207,6 +207,9 @@ func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) 
 //
 // keepResult - at the expiration of a given period of time the result will be
 // unavailable (deleted).
+//
+// NOTE: Do not use defer statements to check the status of task or send error or
+// any response when using PanicRecover middleware.
 func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware {
 	// no sense to use this middleware if the following condition is not satisfied
 	if !(reqTimeout < asyncTimeout && asyncTimeout < keepResult) {
@@ -216,11 +219,9 @@ func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware
 	var asyncJobs = timap.New(keepResult)
 	// create a new Middleware
 	return func(next http.Handler) http.Handler {
-		// define the httprouter.Handle
+		// set timeout with ContextDeadline middleware func
 		return ContextDeadline(reqTimeout)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// current job (can be sync/async)
-			var currJob HandlerTask
-			// check if async request, if not - ignore the next code block
+			// check if async request (should contain async header)
 			if _, ok := r.Header[asyncHeader]; ok {
 				// current request
 				var async *asyncTask
@@ -241,41 +242,43 @@ func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware
 					//  and store in the list
 					asyncJobs.Store(async.ID, async)
 				}
-				// set current job
-				currJob = async
-				// check async on exit and remove if it's done
-				defer func() {
-					if async.Status() == StatusDone {
-						asyncJobs.Delete(async.ID)
-					} else {
-						// return request ID
-						w.Header().Set(asyncRequestID, async.ID)
-						w.Header().Set(asyncRequestAccepted, async.started.Format(DefaultTimeFormat))
-						w.Header().Set(asyncRequestKeepUntil, async.started.Add(keepResult).Format(DefaultTimeFormat))
-						// the status ot request is "accepted"
-						w.WriteHeader(http.StatusAccepted)
-						// provide a basic info message to the client
-						w.Write([]byte("request is in progress\n"))
-					}
-				}()
+				// get context from request
+				ctx := r.Context()
+				// put async task to the context
+				ctx = context.WithValue(ctx, asyncKey{}, async)
+				// replace request
+				r = r.WithContext(ctx)
+				// call next handler
+				next.ServeHTTP(w, r)
+				// check the status of async task
+				if async.Status() == StatusDone {
+					asyncJobs.Delete(async.ID)
+				} else {
+					// return request ID
+					w.Header().Set(asyncRequestID, async.ID)
+					w.Header().Set(asyncRequestAccepted, async.started.Format(DefaultTimeFormat))
+					w.Header().Set(asyncRequestKeepUntil, async.started.Add(keepResult).Format(DefaultTimeFormat))
+					// the status ot request is "accepted"
+					w.WriteHeader(http.StatusAccepted)
+					// provide a basic info message to the client
+					w.Write([]byte("request is in progress\n"))
+				}
 			} else {
 				// create synchronous job
-				currJob = newSyncTask(reqTimeout)
+				sync := newSyncTask(reqTimeout)
+				// get context from request
+				ctx := r.Context()
+				// put async task to the context
+				ctx = context.WithValue(ctx, asyncKey{}, sync)
+				// replace request
+				r = r.WithContext(ctx)
+				// call next handler
+				next.ServeHTTP(w, r)
 				// send timeout code on exit if synchronous job was not done
-				defer func() {
-					if _, err := currJob.Resolve(); err == ErrNotCompleted {
-						http.Error(w, context.DeadlineExceeded.Error(), http.StatusRequestTimeout)
-					}
-				}()
+				if _, err := sync.Resolve(); err == ErrNotCompleted {
+					http.Error(w, context.DeadlineExceeded.Error(), http.StatusRequestTimeout)
+				}
 			}
-			// get context from request
-			ctx := r.Context()
-			// put async task to the context
-			ctx = context.WithValue(ctx, asyncKey{}, currJob)
-			// replace request
-			r = r.WithContext(ctx)
-			// call next handler
-			next.ServeHTTP(w, r)
 		}))
 	}
 }
