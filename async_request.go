@@ -208,7 +208,7 @@ func (at *asyncTask) Do(ctx context.Context, handler func(stop <-chan struct{}) 
 // keepResult - at the expiration of a given period of time the result will be
 // unavailable (deleted).
 //
-// NOTE: Do not use defer statements to check the status of task or send error or
+// NOTE: Do not use defer statements to check the status of task, send error or
 // any response when using PanicRecover middleware.
 func AsyncRequest(reqTimeout, asyncTimeout, keepResult time.Duration) Middleware {
 	// no sense to use this middleware if the following condition is not satisfied
