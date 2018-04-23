@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	timap "github.com/Alma-media/go-timap"
+	timap "github.com/tiny-go/timap"
 )
 
 const (
