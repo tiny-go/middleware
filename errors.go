@@ -21,8 +21,3 @@ func NewStatusError(code int, cause error) StatusError {
 func (e StatusError) Code() int {
 	return e.code
 }
-
-// Error returns the actual error message.
-func (e StatusError) Error() string {
-	return e.error.Error()
-}
