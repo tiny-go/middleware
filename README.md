@@ -17,9 +17,10 @@ $ go get github.com/tiny-go/middleware
 ### Currently available middleware
 - `BodyClose` - closes request body for each request
 - `ContextDeadline` - sets request timeout (demands additional logic in your app)
-- `PanicRecover` - catches the panics inside our chain
+- `PanicRecover` - catches the panics inside our chain, can be used as error handler (similar to `try/catch`) with corresponding panic handler
 - `SetHeaders` - provides an easy way to set response headers
 - `JwtHS256` - verifies JWT (JSON Web Token) signed with HMAC signing method and parses its body to the provided receiver that is going to be available to next handlers through the request context
+- `Codec` - searches for suitable request/response codecs according to "Content-Type"/"Accept" headers and puts  them into the context
 
 ### Experimental middleware
 It means that work is still in progress, a lot of things can be changed or even completely removed
@@ -41,6 +42,9 @@ It means that work is still in progress, a lot of things can be changed or even 
     	"os"
 
     	"github.com/tiny-go/middleware"
+    	"github.com/tiny-go/codec/driver"
+    	"github.com/tiny-go/codec/driver/json"
+    	"github.com/tiny-go/codec/driver/xml"
     )
 
     var (
@@ -56,6 +60,7 @@ It means that work is still in progress, a lot of things can be changed or even 
     			// with HTTP panic handler
     			New(mw.PanicRecover(mw.PanicHandler)).
     			Use(mw.BodyClose).
+    			Use(mw.Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})).
     			Then(panicHandler),
     	)
     	log.Fatal(http.ListenAndServe(":8080", nil))
