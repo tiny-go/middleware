@@ -25,7 +25,7 @@ func TestCodecFromList(t *testing.T) {
 		{
 			title: "should throw an error if request codec in not supported",
 			handler: PanicRecover(PanicHandler)(
-				CodecFromList(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(nil),
+				Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(nil),
 			),
 			request: func() *http.Request {
 				r, _ := http.NewRequest(http.MethodGet, "", nil)
@@ -38,7 +38,7 @@ func TestCodecFromList(t *testing.T) {
 		{
 			title: "should throw an error if response codec in not supported",
 			handler: PanicRecover(PanicHandler)(
-				CodecFromList(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(nil),
+				Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(nil),
 			),
 			request: func() *http.Request {
 				r, _ := http.NewRequest(http.MethodGet, "", nil)
@@ -52,7 +52,7 @@ func TestCodecFromList(t *testing.T) {
 		{
 			title: "should find corresponding codecs and handle the request successfully",
 			handler: PanicRecover(PanicHandler)(
-				CodecFromList(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(
+				Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(
 					BodyClose(
 						http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 							type Data struct{ Test string }

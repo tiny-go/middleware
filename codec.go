@@ -23,10 +23,10 @@ type Codecs interface {
 	Lookup(mimeType string) codec.Codec
 }
 
-// CodecFromList middleware searches for suitable request/response codecs according to
+// Codec middleware searches for suitable request/response codecs according to
 // "Content-Type" and "Accept" headers and puts the correct codecs into the context.
 // NOTE: do not use current function without PanicRecover middleware.
-func CodecFromList(codecs Codecs) Middleware {
+func Codec(codecs Codecs) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var reqCodec, resCodec codec.Codec
