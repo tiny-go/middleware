@@ -24,7 +24,7 @@ type Codecs interface {
 }
 
 // Codec middleware searches for suitable request/response codecs according to
-// "Content-Type" and "Accept" headers and puts the correct codecs into the context.
+// "Content-Type"/"Accept" headers and puts the correct codecs into the context.
 // NOTE: do not use current function without PanicRecover middleware.
 func Codec(codecs Codecs) Middleware {
 	return func(next http.Handler) http.Handler {

@@ -20,7 +20,7 @@ $ go get github.com/tiny-go/middleware
 - `PanicRecover` - catches the panics inside our chain, can be used as error handler (similar to `try/catch`) with corresponding panic handler
 - `SetHeaders` - provides an easy way to set response headers
 - `JwtHS256` - verifies JWT (JSON Web Token) signed with HMAC signing method and parses its body to the provided receiver that is going to be available to next handlers through the request context
-- `Codec` - searches for suitable request/response codecs according to "Content-Type" and "Accept" headers and puts  them into the context
+- `Codec` - searches for suitable request/response codecs according to "Content-Type"/"Accept" headers and puts  them into the context
 
 ### Experimental middleware
 It means that work is still in progress, a lot of things can be changed or even completely removed
