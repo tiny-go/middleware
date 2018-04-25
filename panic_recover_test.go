@@ -1,10 +1,12 @@
 package mw
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/tiny-go/errors"
 )
 
 func Test_PanicRecover(t *testing.T) {
@@ -19,14 +21,18 @@ func Test_PanicRecover(t *testing.T) {
 		{
 			title: "ignore \"nil\" panic and send a success code",
 			nextHandler: http.HandlerFunc(
-				func(w http.ResponseWriter, r *http.Request) { panic(nil) },
+				func(w http.ResponseWriter, r *http.Request) {
+					panic(nil)
+				},
 			),
 			status: http.StatusOK,
 		},
 		{
 			title: "catch \"unknown\" panic and report to the client with code 500",
 			nextHandler: http.HandlerFunc(
-				func(w http.ResponseWriter, r *http.Request) { panic("unexpected panic") },
+				func(w http.ResponseWriter, r *http.Request) {
+					panic("unexpected panic")
+				},
 			),
 			status: http.StatusInternalServerError,
 			output: "unexpected panic\n",
@@ -34,7 +40,9 @@ func Test_PanicRecover(t *testing.T) {
 		{
 			title: "catch a \"standard error\" and report to the client with code 500",
 			nextHandler: http.HandlerFunc(
-				func(w http.ResponseWriter, r *http.Request) { panic(errors.New("standard error")) },
+				func(w http.ResponseWriter, r *http.Request) {
+					panic(fmt.Errorf("standard error"))
+				},
 			),
 			status: http.StatusInternalServerError,
 			output: "standard error\n",
@@ -43,7 +51,7 @@ func Test_PanicRecover(t *testing.T) {
 			title: "catch an \"error with status code\" and report to the client",
 			nextHandler: http.HandlerFunc(
 				func(w http.ResponseWriter, r *http.Request) {
-					panic(NewStatusError(http.StatusBadRequest, errors.New("bad request")))
+					panic(errors.NewBadRequest("bad request"))
 				},
 			),
 			status: http.StatusBadRequest,
@@ -59,7 +67,7 @@ func Test_PanicRecover(t *testing.T) {
 				}
 			}()
 			w := httptest.NewRecorder()
-			PanicRecover(PanicHandler)(tc.nextHandler).ServeHTTP(w, nil)
+			PanicRecover(errors.Send)(tc.nextHandler).ServeHTTP(w, nil)
 			if w.Code != tc.status {
 				t.Errorf("status code %d was expected to be %d", w.Code, tc.status)
 			}

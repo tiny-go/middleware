@@ -6,11 +6,12 @@ import (
 	"net/http"
 
 	"github.com/tiny-go/codec"
+	"github.com/tiny-go/errors"
 )
 
 const (
-	contentTypeHeader = "Content-Type"
 	acceptHeader      = "Accept"
+	contentTypeHeader = "Content-Type"
 )
 
 // codecKey is a private unique key that is used to put/get codec from the context.
@@ -32,17 +33,15 @@ func Codec(codecs Codecs) Middleware {
 			var reqCodec, resCodec codec.Codec
 			// get request codec
 			if reqCodec = codecs.Lookup(r.Header.Get(contentTypeHeader)); reqCodec == nil {
-				panic(NewStatusError(
-					http.StatusBadRequest,
-					fmt.Errorf("unsupported request codec: %q", r.Header.Get(contentTypeHeader)),
+				panic(errors.NewBadRequest(
+					fmt.Sprintf("unsupported request codec: %q", r.Header.Get(contentTypeHeader)),
 				))
 			}
 			r = r.WithContext(context.WithValue(r.Context(), codecKey{"req"}, reqCodec))
 			// get response codec
 			if resCodec = codecs.Lookup(r.Header.Get(acceptHeader)); resCodec == nil {
-				panic(NewStatusError(
-					http.StatusBadRequest,
-					fmt.Errorf("unsupported response codec: %q", r.Header.Get(acceptHeader)),
+				panic(errors.NewBadRequest(
+					fmt.Sprintf("unsupported response codec: %q", r.Header.Get(acceptHeader)),
 				))
 			}
 			r = r.WithContext(context.WithValue(r.Context(), codecKey{"res"}, resCodec))

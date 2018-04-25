@@ -9,6 +9,7 @@ import (
 	"github.com/tiny-go/codec/driver"
 	"github.com/tiny-go/codec/driver/json"
 	"github.com/tiny-go/codec/driver/xml"
+	"github.com/tiny-go/errors"
 )
 
 func TestCodecFromList(t *testing.T) {
@@ -24,7 +25,7 @@ func TestCodecFromList(t *testing.T) {
 	cases := []testCase{
 		{
 			title: "should throw an error if request codec in not supported",
-			handler: PanicRecover(PanicHandler)(
+			handler: PanicRecover(errors.Send)(
 				Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(nil),
 			),
 			request: func() *http.Request {
@@ -37,7 +38,7 @@ func TestCodecFromList(t *testing.T) {
 		},
 		{
 			title: "should throw an error if response codec in not supported",
-			handler: PanicRecover(PanicHandler)(
+			handler: PanicRecover(errors.Send)(
 				Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(nil),
 			),
 			request: func() *http.Request {
@@ -51,7 +52,7 @@ func TestCodecFromList(t *testing.T) {
 		},
 		{
 			title: "should find corresponding codecs and handle the request successfully",
-			handler: PanicRecover(PanicHandler)(
+			handler: PanicRecover(errors.Send)(
 				Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(
 					BodyClose(
 						http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
