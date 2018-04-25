@@ -9,7 +9,6 @@ import (
 	"github.com/tiny-go/codec/driver"
 	"github.com/tiny-go/codec/driver/json"
 	"github.com/tiny-go/codec/driver/xml"
-	"github.com/tiny-go/errors"
 )
 
 func TestCodecFromList(t *testing.T) {
@@ -24,10 +23,8 @@ func TestCodecFromList(t *testing.T) {
 
 	cases := []testCase{
 		{
-			title: "should throw an error if request codec in not supported",
-			handler: PanicRecover(errors.Send)(
-				Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(nil),
-			),
+			title:   "should throw an error if request codec in not supported",
+			handler: Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(nil),
 			request: func() *http.Request {
 				r, _ := http.NewRequest(http.MethodGet, "", nil)
 				r.Header.Set(contentTypeHeader, "unknown")
@@ -37,10 +34,8 @@ func TestCodecFromList(t *testing.T) {
 			body: "unsupported request codec: \"unknown\"\n",
 		},
 		{
-			title: "should throw an error if response codec in not supported",
-			handler: PanicRecover(errors.Send)(
-				Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(nil),
-			),
+			title:   "should throw an error if response codec in not supported",
+			handler: Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(nil),
 			request: func() *http.Request {
 				r, _ := http.NewRequest(http.MethodGet, "", nil)
 				r.Header.Set(contentTypeHeader, "application/json")
@@ -52,16 +47,14 @@ func TestCodecFromList(t *testing.T) {
 		},
 		{
 			title: "should find corresponding codecs and handle the request successfully",
-			handler: PanicRecover(errors.Send)(
-				Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(
-					BodyClose(
-						http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-							type Data struct{ Test string }
-							var data Data
-							RequestCodecFromContext(r.Context()).Decoder(r.Body).Decode(&data)
-							ResponseCodecFromContext(r.Context()).Encoder(w).Encode(data)
-						}),
-					),
+			handler: Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})(
+				BodyClose(
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						type Data struct{ Test string }
+						var data Data
+						RequestCodecFromContext(r.Context()).Decoder(r.Body).Decode(&data)
+						ResponseCodecFromContext(r.Context()).Encoder(w).Encode(data)
+					}),
 				),
 			),
 			request: func() *http.Request {
