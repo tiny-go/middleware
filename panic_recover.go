@@ -17,28 +17,28 @@ type OnPanic func(http.ResponseWriter, interface{})
 //  package main
 //
 //  import (
-// 	  "log"
-// 	  "net/http"
+//    "log"
+//    "net/http"
 //
 //    "github.com/tiny-go/errors"
 //    "github.com/tiny-go/middleware"
 //  )
 //
 //  var (
-// 	  panicHandler http.HandlerFunc = func(w http.ResponseWriter, r *http.Request) {
-// 		  panic("something went wrong")
-// 	  }
+//    panicHandler http.HandlerFunc = func(w http.ResponseWriter, r *http.Request) {
+//      panic("something went wrong")
+//    }
 //  )
 //
 //  func main() {
-// 	  http.Handle(
-// 	    "/",
-// 		  mw.
-// 		    // with HTTP panic handler
-// 		    New(mw.PanicRecover(errors.Send)).
-// 		    Then(panicHandler),
-// 	  )
-// 	  log.Fatal(http.ListenAndServe(":8080", nil))
+//    http.Handle(
+//      "/",
+//      mw.
+//        // with HTTP panic handler
+//        New(mw.PanicRecover(errors.Send)).
+//        Then(panicHandler),
+//    )
+//    log.Fatal(http.ListenAndServe(":8080", nil))
 //  }
 func PanicRecover(onPanic OnPanic) Middleware {
 	return func(next http.Handler) http.Handler {
