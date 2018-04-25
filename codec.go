@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	contentTypeHeader = "Content-Type"
 	acceptHeader      = "Accept"
+	contentTypeHeader = "Content-Type"
 )
 
 // codecKey is a private unique key that is used to put/get codec from the context.
