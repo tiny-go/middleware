@@ -51,7 +51,7 @@ func Test_PanicRecover(t *testing.T) {
 			title: "catch an \"error with status code\" and report to the client",
 			nextHandler: http.HandlerFunc(
 				func(w http.ResponseWriter, r *http.Request) {
-					panic(errors.NewBadRequest("bad request"))
+					panic(errors.NewBadRequest(fmt.Errorf("bad request")))
 				},
 			),
 			status: http.StatusBadRequest,
