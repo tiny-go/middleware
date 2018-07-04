@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/tiny-go/errors"
 )
 
 // jwtAuthKey is an authorization key param.
@@ -20,9 +22,15 @@ type Claims interface {
 	jwt.Claims
 }
 
+// Validator interface is responsible for token validation, meanwhile it parses
+// token to the provided receiver
+type Validator interface {
+	Validate(jwt string, claims Claims) error
+}
+
 // JwtHS256 is a JSON Web token middleware using HMAC signing method that parses
 // token to the provided Claims receiver and puts it to the request context.
-func JwtHS256(secret string, cf func() Claims) Middleware {
+func JwtHS256(validator Validator, cf func() Claims) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// get JSON web token from the request
@@ -31,26 +39,15 @@ func JwtHS256(secret string, cf func() Claims) Middleware {
 				http.Error(w, "no JSON web token in request", http.StatusUnauthorized)
 				return
 			}
-			// parse JWT
-			token, err := jwt.ParseWithClaims(bearer, cf(), func(token *jwt.Token) (interface{}, error) {
-				// check token algorithm
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-				}
-				return []byte(secret), nil
-			})
-			// cannot parse the token
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusForbidden)
-				return
-			}
-			// token validation error
-			if !token.Valid {
-				http.Error(w, "token is invalid", http.StatusForbidden)
+
+			claims := cf()
+
+			if err := validator.Validate(bearer, claims); err != nil {
+				errors.Send(w, err)
 				return
 			}
 			// add claims to the context and call the next
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), claimsKey{}, token.Claims)))
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), claimsKey{}, claims)))
 		})
 	}
 }
@@ -81,8 +78,25 @@ func Bearer(r *http.Request) (string, bool) {
 	return "", false
 }
 
-// GetClaimsFromContext returns claims from context.
-func GetClaimsFromContext(ctx context.Context) Claims {
-	claims, _ := ctx.Value(claimsKey{}).(Claims)
-	return claims
+// ClaimsFromContextTo retrieves claims from context and assigns to the provided receiver.
+func ClaimsFromContextTo(ctx context.Context, recv interface{}) (err error) {
+	// check context
+	claims := ctx.Value(claimsKey{})
+	if claims == nil {
+		return fmt.Errorf("no claims in the context")
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("cannot assign claims to the provided receiver")
+		}
+	}()
+	// check receiver type (should be a pointer)
+	rv := reflect.ValueOf(recv)
+	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+		return fmt.Errorf("claims object is not a pointer")
+	}
+	// assign context claims to the provided receiver
+	rv.Elem().Set(reflect.ValueOf(claims))
+	// success (if no panic in the previous line)
+	return nil
 }
