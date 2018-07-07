@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+var _ Controller = (*BaseController)(nil)
+
 func Test_BaseController(t *testing.T) {
 	type testCase struct {
 		title  string
