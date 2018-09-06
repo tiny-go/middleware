@@ -41,3 +41,7 @@ func (bc *BaseController) Middleware(method string) Middleware {
 	}
 	return New()
 }
+
+// Init does nothing. This is a default function to avoid explicit declaration
+// when controller does not require any Init logic.
+func (bc *BaseController) Init() error { return nil }
