@@ -53,9 +53,8 @@ func handlerAsync(w http.ResponseWriter, r *http.Request) HandlerTask {
 				case <-stop:
 					// do something to terminate handler
 					return nil
-				// wait
-				default:
-					time.Sleep(10 * time.Millisecond)
+					// wait
+				case <-time.After(10 * time.Millisecond):
 				}
 			}
 			// do not forget to complete the task (otherwise it will stay "in progress" forever)

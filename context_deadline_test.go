@@ -16,8 +16,7 @@ func handler100MSec(w http.ResponseWriter, r *http.Request) {
 			select {
 			case <-stop:
 				return nil
-			default:
-				time.Sleep(10 * time.Millisecond)
+			case <-time.After(10 * time.Millisecond):
 			}
 		}
 		return nil
