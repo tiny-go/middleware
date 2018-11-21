@@ -48,7 +48,7 @@ func Test_JWT(t *testing.T) {
 				closure: func() Claims { return new(jwt.StandardClaims) },
 				parser:  &parser{Error: errors.New("validation failed")},
 				headers: map[string]string{jwtAuthKey: "token"},
-				code:    http.StatusInternalServerError,
+				code:    http.StatusUnauthorized,
 				body:    "validation failed\n",
 			},
 			{

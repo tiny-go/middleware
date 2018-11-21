@@ -38,14 +38,14 @@ func Test_PanicRecover(t *testing.T) {
 			output: "unexpected panic\n",
 		},
 		{
-			title: "catch a \"standard error\" and report to the client with code 500",
+			title: "catch a \"standard error\", report to the client with code 500 and hide error message",
 			nextHandler: http.HandlerFunc(
 				func(w http.ResponseWriter, r *http.Request) {
 					panic(fmt.Errorf("standard error"))
 				},
 			),
 			status: http.StatusInternalServerError,
-			output: "standard error\n",
+			output: fmt.Sprintf("%s\n", http.StatusText(http.StatusInternalServerError)),
 		},
 		{
 			title: "catch an \"error with status code\" and report to the client",

@@ -44,7 +44,7 @@ func JWT(parser JWTParser, cf ClaimsFactory) Middleware {
 			claims := cf()
 			// validate token
 			if err := parser.Parse(bearer, &claims); err != nil {
-				errors.Send(w, err)
+				errors.Send(w, errors.NewUnauthorized(err))
 				return
 			}
 			// add claims to the context and call the next
