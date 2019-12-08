@@ -26,6 +26,7 @@ func ContextHandler(next http.Handler) http.Handler {
 			case context.DeadlineExceeded:
 				http.Error(w, r.Context().Err().Error(), http.StatusRequestTimeout)
 			default:
+				// handle unknown errors
 				http.Error(w, r.Context().Err().Error(), http.StatusInternalServerError)
 			}
 			return
