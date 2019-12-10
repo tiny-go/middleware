@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/tiny-go/codec"
+	"github.com/tiny-go/errors"
 )
 
 const (
@@ -25,19 +26,22 @@ type Codecs interface {
 
 // Codec middleware searches for suitable request/response codecs according to
 // "Content-Type"/"Accept" headers and puts the correct codecs into the context.
-func Codec(codecs Codecs) Middleware {
+func Codec(fn errors.HandlerFunc, codecs Codecs) Middleware {
+	if fn == nil {
+		fn = http.Error
+	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var reqCodec, resCodec codec.Codec
 			// get request codec
 			if reqCodec = codecs.Lookup(r.Header.Get(contentTypeHeader)); reqCodec == nil {
-				http.Error(w, fmt.Sprintf("unsupported request codec: %q", r.Header.Get(contentTypeHeader)), http.StatusBadRequest)
+				fn(w, fmt.Sprintf("unsupported request codec: %q", r.Header.Get(contentTypeHeader)), http.StatusBadRequest)
 				return
 			}
 			r = r.WithContext(context.WithValue(r.Context(), codecKey{"req"}, reqCodec))
 			// get response codec
 			if resCodec = codecs.Lookup(r.Header.Get(acceptHeader)); resCodec == nil {
-				http.Error(w, fmt.Sprintf("unsupported response codec: %q", r.Header.Get(acceptHeader)), http.StatusBadRequest)
+				fn(w, fmt.Sprintf("unsupported response codec: %q", r.Header.Get(acceptHeader)), http.StatusBadRequest)
 				return
 			}
 			r = r.WithContext(context.WithValue(r.Context(), codecKey{"res"}, resCodec))

@@ -19,7 +19,7 @@ func Test_RequestLimiter(t *testing.T) {
 		// close the channel on exit to unblock handlers
 		defer close(done)
 
-		mw := RequestLimiter(http.Error, limit)
+		mw := RequestLimiter(nil, limit)
 
 		handler := mw(http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
