@@ -1,0 +1,8 @@
+github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
+github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
+github.com/tiny-go/codec v0.0.0-20190811121820-f00b5f2f2c39 h1:KVQqwKX5RIsTuLw9Vxvv6GtkwOcFSH3UGgqN0G2sqj0=
+github.com/tiny-go/codec v0.0.0-20190811121820-f00b5f2f2c39/go.mod h1:GzXWD52HLoU7emi1pzTrsu4FbY6MPwZ808Ry7jdkf2g=
+github.com/tiny-go/errors v0.0.0-20191130154834-0afb190b1b02 h1:npF1mVXrlmXBYNMe2Iedh+e5qocjKptqlWlRI0AXRl0=
+github.com/tiny-go/errors v0.0.0-20191130154834-0afb190b1b02/go.mod h1:n0t4OzuE/3+QhvsCpiBWTPeKFb97KlGu/6DQklRKlcM=
+github.com/tiny-go/timap v0.0.0-20180423194412-3e15285adfdb h1:1NkpkoGDzY8TS/dWYunoulEcNaaA1zvx6fXOh0xyxaE=
+github.com/tiny-go/timap v0.0.0-20180423194412-3e15285adfdb/go.mod h1:ht2ijURSyPzXBcpy1TjokgW74ZtPY14s2f2pmQoi0X4=
