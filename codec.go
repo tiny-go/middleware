@@ -51,7 +51,7 @@ func Codec(fn errors.HandlerFunc, codecs Codecs) Middleware {
 	}
 }
 
-// RequestCodecFromContext pulls the Codec from a request context or or returns nil.
+// RequestCodecFromContext pulls the Codec from a request context or returns nil.
 func RequestCodecFromContext(ctx context.Context) codec.Codec {
 	codec, _ := ctx.Value(codecKey{"req"}).(codec.Codec)
 	return codec

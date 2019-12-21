@@ -1,5 +1,7 @@
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
+github.com/gofrs/uuid v3.2.0+incompatible h1:y12jRkkFxsd7GpqdSZ+/KCs/fJbqpEXSGd4+jfEaewE=
+github.com/gofrs/uuid v3.2.0+incompatible/go.mod h1:b2aQJv3Z4Fp6yNu3cdSllBxTCLRxnplIgP/c0N/04lM=
 github.com/tiny-go/codec v1.0.0 h1:GzOtsN6BLXAmbmlwoJ0wHSBxQAAupxYk0UAZPvEArrM=
 github.com/tiny-go/codec v1.0.0/go.mod h1:9bR0GUsR+ecErWI+jiR3WZuK7SVvzvrFCcpE4s35gDM=
 github.com/tiny-go/errors v1.0.0 h1:Q8YNDpx1q2bUTO4N+fO23ODpfAOX8N1khVNi8lLQ0wc=
