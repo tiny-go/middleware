@@ -56,11 +56,11 @@ It means that work is still in progress, a lot of things can be changed or even 
     func main() {
     	http.Handle(
     		"/",
-    		mw.
+    		middleware.
     			// with HTTP panic handler
-    			New(mw.PanicRecover(mw.PanicHandler)).
-    			Use(mw.BodyClose).
-    			Use(mw.Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})).
+    			New(middleware.PanicRecover(middleware.PanicHandler)).
+    			Use(middleware.BodyClose).
+    			Use(middleware.Codec(driver.DummyRegistry{&json.JSON{}, &xml.XML{}})).
     			Then(panicHandler),
     	)
     	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -80,14 +80,14 @@ It means that work is still in progress, a lot of things can be changed or even 
     func main() {
     	http.Handle(
     		"/",
-    		mw.Chain(
+    		middleware.Chain(
     			// with custom panic handler
-    			mw.PanicRecover(func(_ http.ResponseWriter, r interface{}) {
+    			middleware.PanicRecover(func(_ http.ResponseWriter, r interface{}) {
     				if r != nil {
     					log.Println(r)
     				}
     			}),
-    			mw.BodyClose,
+    			middleware.BodyClose,
     			panicHandler,
     		),
     	)
@@ -99,8 +99,6 @@ It means that work is still in progress, a lot of things can be changed or even 
 [godoc-link]: https://godoc.org/github.com/tiny-go/middleware
 [license-badge]: https://img.shields.io/:license-MIT-green.svg
 [license-link]: https://opensource.org/licenses/MIT
-[circleci-badge]: https://circleci.com/gh/tiny-go/middleware.svg?style=shield
-[circleci-link]: https://circleci.com/gh/tiny-go/middleware
 [report-badge]: https://goreportcard.com/badge/github.com/tiny-go/middleware
 [report-link]: https://goreportcard.com/report/github.com/tiny-go/middleware
 [cover-badge]: https://gocover.io/_badge/github.com/tiny-go/middleware

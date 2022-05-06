@@ -1,4 +1,4 @@
-package mw
+package middleware
 
 // Controller represents simple HTTP controller containing middleware for each method.
 type Controller interface {
