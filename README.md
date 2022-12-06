@@ -2,7 +2,6 @@
 
 [![GoDoc][godoc-badge]][godoc-link]
 [![License][license-badge]][license-link]
-[![Build Status][circleci-badge]][circleci-link]
 [![Report Card][report-badge]][report-link]
 [![GoCover][cover-badge]][cover-link]
 
